@@ -32,7 +32,7 @@ echo
 
 echo Estadeo stabilization for video $input_raw_video to $output_raw_video
 path=$(dirname "$0")
-$path/estadeo $input_raw_video $width $height $nframes -o $output_raw_video -st $sigma_t -sx $sigma_x -so $sigma_o -ss $sigma_s -sp $sigma_p -w $out_transform -v $9
+valgrind $path/estadeo $input_raw_video $width $height $nframes -o $output_raw_video -st $sigma_t -sx $sigma_x -so $sigma_o -ss $sigma_s -sp $sigma_p -w $out_transform -v $9
 echo
 
 echo Converting $output_raw_video to $outvideo
