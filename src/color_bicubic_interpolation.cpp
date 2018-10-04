@@ -9,8 +9,8 @@
 
 
 #include "color_bicubic_interpolation.h"
-#include "ica/bicubic_interpolation.h"
-#include "ica/transformation.h"
+#include "bicubic_interpolation.h"
+#include "transformation.h"
 
 /**
   *
@@ -34,21 +34,20 @@ bicubic_interpolation(
   int sy = (vv < 0) ? -1 : 1;
 
   int x, y, mx, my, dx, dy, ddx, ddy;
-  bool out = false;
+  
+  x = neumann_bc ((int) uu, nx);
+  y = neumann_bc ((int) vv, ny);
+  mx = neumann_bc ((int) uu - sx, nx);
+  my = neumann_bc ((int) vv - sy, ny);
+  dx = neumann_bc ((int) uu + sx, nx);
+  dy = neumann_bc ((int) vv + sy, ny);
+  ddx = neumann_bc ((int) uu + 2 * sx, nx);
+  ddy = neumann_bc ((int) vv + 2 * sy, ny);
 
-  x = neumann_bc ((int) uu, nx, out);
-  y = neumann_bc ((int) vv, ny, out);
-  mx = neumann_bc ((int) uu - sx, nx, out);
-  my = neumann_bc ((int) vv - sy, ny, out);
-  dx = neumann_bc ((int) uu + sx, nx, out);
-  dy = neumann_bc ((int) vv + sy, ny, out);
-  ddx = neumann_bc ((int) uu + 2 * sx, nx, out);
-  ddy = neumann_bc ((int) vv + 2 * sy, ny, out);
-
-  if (out && border_out) 
+  if(uu>nx || uu<-1 || vv>ny || vv<-1) 
     return 0;
   else
-    {
+  {
       //obtain the interpolation points of the image
       float p11 = input[(mx  + nx * my) * nz + k];
       float p12 = input[(x   + nx * my) * nz + k];
@@ -78,7 +77,7 @@ bicubic_interpolation(
 
       //return interpolation
       return bicubic_interpolation(pol, (float) uu-x, (float) vv-y);
-    }
+  }
 }
 
 

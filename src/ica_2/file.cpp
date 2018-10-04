@@ -3,13 +3,14 @@
 // copy of this license along this program. If not, see
 // <http://www.opensource.org/licenses/bsd-license.html>.
 //
+// Copyright (C) 2018, Thibaud Briand <thibaud.briand@enpc.fr>
 // Copyright (C) 2015, Javier Sánchez Pérez <jsanchez@ulpgc.es>
 // All rights reserved.
 
-
 #include <stdio.h>
-
+#include <stdlib.h>
 #include "file.h"
+
 
 
 /**
@@ -24,8 +25,8 @@ void read
   char *file,   //input file name
   float **p,   //parameters to be read
   int &nparams, //number of parameters
-  int &nx,      //number of columns 
-  int &ny       //number of rows 
+  int &nx,      //number of columns
+  int &ny       //number of rows
 )
 {
   FILE *fd=fopen(file,"r");
@@ -45,7 +46,6 @@ void read
   }
 }
 
-
 /**
  *
  *  Function to save the parameters in ascii format
@@ -55,14 +55,14 @@ void read
  */
 void save
 (
-  char *file,  //output file name 
+  char *file,  //output file name
   float *p,   //parameters to be saved
   int nparams, //number of parameters
-  int nx,      //number of columns 
-  int ny       //number of rows 
-) 
+  int nx,      //number of columns
+  int ny       //number of rows
+)
 {
-  
+
   FILE *fd=fopen(file,"w");
   fprintf(fd,"%d %d %d\n", nparams, nx, ny);
   for(int i=0; i<nx*ny; i++)
@@ -74,12 +74,11 @@ void save
   fclose(fd);
 }
 
-
 /**
  *
  *  Function to read the parameters in ascii format
- *  It reads a header with: nparams nx ny
- *  Then it reads the parameters 
+ *  It reads a header with: nparams
+ *  Then it reads the parameters
  *
  */
 void read
@@ -107,21 +106,21 @@ void read
 /**
  *
  *  Function to save the parameters in ascii format
- *  It creates a header with: nparams nx ny
- *  Then it stores the parameters 
+ *  It creates a header with: nparams
+ *  Then it stores the parameters
  *
  */
 void save
 (
-  const char *file, //output file name 
+  const char *file, //output file name
   float *p,        //parameters to be saved
   int nparams       //number of parameters
-) 
+)
 {
   FILE *fd=fopen(file,"w");
   fprintf(fd,"%d\n", nparams);
   for(int j=0; j<nparams; j++)
-    fprintf(fd,"%f ", p[j]);
+    fprintf(fd,"%.14lg ", p[j]);
   fprintf(fd,"\n");
   fclose(fd);
 }

@@ -17,9 +17,11 @@
 #include "motion_smoothing.h"
 #include "utils.h"
 #include "color_bicubic_interpolation.h"
-#include "ica/inverse_compositional_algorithm.h"
-#include "ica/transformation.h"
+#include "inverse_compositional_algorithm.h"
+#include "transformation.h"
 
+
+#define ICA //ICA_2
 
 /**
   *
@@ -33,6 +35,7 @@ void motion_estimation
   int nparams,     //type of matrix transformation
   int nx,          //number of columns
   int ny,          //number of rows
+  int nz,          //number of channels
   int nframes,     //number of frames of the video
   int verbose      //verbose mode
 )
@@ -40,7 +43,7 @@ void motion_estimation
   //introduce identity matrix for the first transform
   for(int i=0;i<nparams;i++) H[i]=0;
 
-  int size=nx*ny;
+  int size=nx*ny*nz;
 
   if(verbose) printf("  Direct method: ");
  
@@ -50,7 +53,7 @@ void motion_estimation
   float TOL=1E-3;
   float lambda=0;
   float N;
-  int robust=LORENTZIAN;
+  int robust=QUADRATIC;  //LORENTZIAN;
 
   N=1+log(((nx<ny)?nx:ny)/50.)/log(1./zfactor);
   if ((int) N<nscales) nscales=(int) N;
@@ -67,7 +70,7 @@ void motion_estimation
 
     pyramidal_inverse_compositional_algorithm(
       &I[size*i], &I[size*(i+1)], &(H[(i+1)*nparams]), nparams, 
-      nx, ny, nscales, zfactor, TOL, robust, lambda, 0
+      nx, ny, nz, nscales, zfactor, TOL, robust, lambda
     );
   }
 
@@ -136,9 +139,10 @@ void online_motion
   float *I1,   //first image
   float *I2,   //second image
   float *H,    //output matrix transformation
-  int nparams, //type of matrix transformation
-  int nx,      //number of columns
-  int ny       //number of rows
+  int nparams,  //type of matrix transformation
+  int nx,       //number of columns
+  int ny,        //number of rows
+  int nz        //number of channels
 )
 {
   //parameters for the direct method
@@ -147,15 +151,14 @@ void online_motion
   float TOL=1E-3;
   float lambda=0;
   float N;
-  int robust=LORENTZIAN;
+  int robust=QUADRATIC; //LORENTZIAN;
 
   N=1+log(((nx<ny)?nx:ny)/50.)/log(1./zfactor);
   if ((int) N<nscales) nscales=(int) N;
 
   //motion estimation through direct methods
   pyramidal_inverse_compositional_algorithm(
-    I1, I2, H, nparams, nx, ny, nscales, 
-    zfactor, TOL, robust, lambda, 0
+    I1, I2, H, nparams, nx, ny, nz, nscales, zfactor, TOL, robust, lambda
   );
 }
 
@@ -206,11 +209,7 @@ void estadeo(
   int nframes,         //number of frames of the video
   int nparams,         //type of matrix transformation
   int smooth_strategy, //motion smoothing strategy
-  float sigma_t,       //temporal Gaussian standard deviation
-  float sigma_x,       //spatial Gaussian standard deviation
-  float sigma_o,       //rotational Gaussian standard deviation
-  float sigma_s,       //scale Gaussian standard deviation
-  float sigma_p,       //projective Gaussian standard deviation
+  float *sigma,        //Gaussian standard deviations
   int bc,              //boundary condition for smoothing
   int postprocessing,  //method for dealing with empty regions
   char *in_transform,  //input file with the computed transformations
@@ -231,7 +230,11 @@ void estadeo(
       printf("\n 1-Motion estimation:\n");
 
     //compute the motion between consecutive frames
-    motion_estimation(I, H, nparams, nx, ny, nframes, verbose);
+#ifdef ICA  //use ICA for graylevel images
+    motion_estimation(I, H, nparams, nx, ny, 1, nframes, verbose);
+#else
+    motion_estimation(Ic, H, nparams, nx, ny, nz, nframes, verbose);
+#endif
 
     //save the original transformation
     if(out_transform!=NULL)
@@ -258,8 +261,7 @@ void estadeo(
     printf("\n 2-Motion smoothing:\n");
 
   motion_smoothing(
-    H, Hp, nparams, nframes, sigma_t, sigma_x, sigma_o, sigma_s, sigma_p, 
-    smooth_strategy, bc, verbose
+    H, Hp, nparams, nframes, sigma, smooth_strategy, bc, verbose
   );
 
   //save the stabilizing transformation 
@@ -307,7 +309,7 @@ void estadeo(
   * Function for Online Video Estabilization
   * 
 **/
-void online_estadeo(
+void estadeo_online(
   float *I,            //input grayscale video to estabilize
   float *Ic,           //input color video to estabilize
   int nx,              //number of columns 
@@ -316,11 +318,7 @@ void online_estadeo(
   int nframes,         //number of frames of the video
   int nparams,         //type of matrix transformation
   int smooth_strategy, //motion smoothing strategy
-  float sigma_t,       //temporal Gaussian standard deviation
-  float sigma_x,       //spatial Gaussian standard deviation
-  float sigma_o,       //rotational Gaussian standard deviation
-  float sigma_s,       //scale Gaussian standard deviation
-  float sigma_p,       //projective Gaussian standard deviation
+  float *sigma,        //Gaussian standard deviations
   int bc,              //boundary condition for smoothing
   int postprocessing,  //method for dealing with empty regions
   char *out_stransform,//output file to write the stabilizing transformations
@@ -340,14 +338,19 @@ void online_estadeo(
     
     //step 1. Compute motion between the last two frames
     gettimeofday(&t1, NULL);
-    online_motion(&I[size*(f-1)], &I[size*f], &H[nparams*f], nparams, nx, ny);
+#ifdef ICA  //use ICA for graylevel images
+    online_motion(
+      &I[size*(f-1)], &I[size*f], &H[nparams*f], nparams, nx, ny, 1
+    );
+#else  //no está funcionando bien.........
+    online_motion(
+      &Ic[size*nz*(f-1)], &Ic[size*nz*f], &H[nparams*f], nparams, nx, ny, nz
+    );
+#endif 
     
     //step 2. Smooth the last transformation 
     gettimeofday(&t2, NULL);
-    online_smoothing(
-      H, Hp, nparams, f+1, sigma_t, sigma_x, sigma_o, 
-      sigma_s, sigma_p, smooth_strategy, bc
-    );
+    online_smoothing(H, Hp, nparams, f+1, sigma, smooth_strategy, bc);
     
     //step 3. Warp the image
     gettimeofday(&t3, NULL);

@@ -1,5 +1,6 @@
 CFLAGS=-Wall -Wextra -O3 #-Werror   
 LFLAGS=-lstdc++ -fopenmp -lm -lfftw3 -lfftw3f #-lpng -ljpeg -ltiff 
+INCLUDE=-I./src/ica -I./src
 
 #object files
 OBJ_ICA= bicubic_interpolation.o file.o inverse_compositional_algorithm.o mask.o matrix.o transformation.o zoom.o

@@ -30,11 +30,7 @@ void motion_smoothing
   float *Hp,         //smooth output matrix transformations
   int   nparams,     //type of matrix transformation
   int   ntransforms, //number of frames of the video
-  float sigma_t,     //temporal Gaussian standard deviation
-  float sigma_x,     //spatial Gaussian standard deviation
-  float sigma_o,     //rotational Gaussian standard deviation
-  float sigma_s,     //scale Gaussian standard deviation
-  float sigma_p,     //projective Gaussian standard deviation
+  float *sigma,      //Gaussian standard deviations
   int   type,        //motion smoothing strategy
   int   bc,          //type of boundary condition
   int   verbose      //verbose mode
@@ -47,11 +43,7 @@ void online_smoothing
   float *Hp,         //smooth output matrix transformations
   int   nparams,     //type of matrix transformation
   int   ntransforms, //number of frames of the video
-  float sigma_t,     //temporal Gaussian standard deviation
-  float sigma_x,     //spatial Gaussian standard deviation
-  float sigma_o,     //rotation Gaussian standard deviation
-  float sigma_s,     //scale Gaussian standard deviation
-  float sigma_p,     //projective Gaussian standard deviation
+  float *sigma,      //Gaussian standard deviations
   int   type,        //motion smoothing strategy
   int   bc           //type of boundary condition
 );

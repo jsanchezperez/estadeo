@@ -9,8 +9,8 @@
 
 #include "motion_smoothing.h"
 #include "gaussian_conv_dct.h"
-#include "ica/transformation.h"
-#include "ica/matrix.h"
+#include "transformation.h"
+#include "matrix.h"
 
 #include <stdio.h>
 #include <math.h>
@@ -25,7 +25,7 @@ void online_global_gaussian
   int   i,           //frame number
   int   nparams,     //type of matrix transformation
   int   ntransforms, //number of frames of the video  
-  float *sigma,      //Gaussian standard deviation
+  float *sigma,      //Gaussian standard deviations
   int   bc           //types of boundary conditions
 )
 {
@@ -40,13 +40,13 @@ void online_global_gaussian
   //Gaussian convolution in  each parameter separately
   for(int p=0;p<nparams;p++)
   {
-    double average=0.0;
-    double sum=0.0;
+    float average=0.0;
+    float sum=0.0;
     
     for(int j=i-radius;j<=i+radius;j++)
     {
-      double value=0;
-      double Hj=0;
+      float value=0;
+      float Hj=0;
       
       //test boundary conditions
       if(j<0)
@@ -91,10 +91,10 @@ void online_global_gaussian
       }
       
       //increase accumulator
-      double dH=value; //(H[i*nparams+p]-Hj);
-      double norm=(j-i)*(j-i)/(2*sigma[0]*sigma[0])+
+      float dH=value; //(H[i*nparams+p]-Hj);
+      float norm=(j-i)*(j-i)/(2*sigma[0]*sigma[0])+
                   dH*dH/(2*sigma[p+1]*sigma[p+1]);
-      double gauss=exp(-norm);
+      float gauss=exp(-norm);
       average+=gauss*value;
       sum+=gauss;
     }
@@ -127,8 +127,8 @@ void online_local_gaussian
   //Gaussian convolution in each parameter separately
   for(int p=0;p<nparams;p++)
   { 
-    double average=0.0;
-    double sum=0.0;
+    float average=0.0;
+    float sum=0.0;
     
     for(int j=i-radius;j<=i+radius;j++)
     {
@@ -254,7 +254,7 @@ void online_local_matrix_based_smoothing
 
 
 //Gaussian convolution with a set of points
-double online_point_gaussian(
+float online_point_gaussian(
   float *x,          //set of points
   int   i,           //frame number
   int   ntransforms, //number of transforms
@@ -262,8 +262,8 @@ double online_point_gaussian(
   int   bc           //type of boundary condition
 )
 {
-  double average=0.0;
-  double sum=0.0;
+  float average=0.0;
+  float sum=0.0;
 
   if(sigma>=3*ntransforms)
     sigma=ntransforms/3;
@@ -276,7 +276,7 @@ double online_point_gaussian(
   //Gaussian convolution
   for(int j=i-radius;j<=i+radius;j++)
   {
-    double value=0;
+    float value=0;
     
     //test boundary conditions
     if(j<0)
@@ -309,9 +309,9 @@ double online_point_gaussian(
     }
     else value=x[j];
 
-    double dx=j-i;
-    double norm=0.5*dx*dx/(sigma*sigma);
-    double gauss=exp(-norm);
+    float dx=j-i;
+    float norm=0.5*dx*dx/(sigma*sigma);
+    float gauss=exp(-norm);
     average+=gauss*value;
     sum+=gauss;
   }
@@ -389,7 +389,7 @@ void online_local_linear_matrix_based_smoothing
   float *Hp,         //smooth output matrix transformations
   int   nparams,     //type of matrix transformation
   int   ntransforms, //number of frames of the video  
-  float sigma,       //Gaussian standard deviation
+  float *sigma,      //Gaussian standard deviations
   int   bc           //type of boundary condition
 )
 {
@@ -418,7 +418,7 @@ void online_local_linear_matrix_based_smoothing
   }
 
   //convolve the virtual trajectories with a Gaussian kernel
-  online_matrix_gaussian_dct(Hi, Hs, 9, ntransforms, sigma, bc);
+  online_matrix_gaussian_dct(Hi, Hs, 9, ntransforms, sigma[0], bc);
 
   for(int i=0;i<ntransforms;i++) 
   {
@@ -507,7 +507,7 @@ void online_local_linear_point_based_smoothing
   float *Hp,         //smooth output matrix transformations
   int   nparams,     //type of matrix transformation
   int   ntransforms, //number of frames of the video  
-  float sigma,       //Gaussian standard deviation
+  float *sigma,      //Gaussian standard deviations
   int   bc           //type of boundary condition
 )
 { 
@@ -565,14 +565,14 @@ void online_local_linear_point_based_smoothing
   }
   
   //DCT Gaussian convolution of each virtual trajectory
-  online_point_gaussian_dct(x0, x0s, ntransforms, sigma, bc);
-  online_point_gaussian_dct(x1, x1s, ntransforms, sigma, bc);
-  online_point_gaussian_dct(x2, x2s, ntransforms, sigma, bc);
-  online_point_gaussian_dct(x3, x3s, ntransforms, sigma, bc);
-  online_point_gaussian_dct(y0, y0s, ntransforms, sigma, bc);
-  online_point_gaussian_dct(y1, y1s, ntransforms, sigma, bc);
-  online_point_gaussian_dct(y2, y2s, ntransforms, sigma, bc);
-  online_point_gaussian_dct(y3, y3s, ntransforms, sigma, bc);
+  online_point_gaussian_dct(x0, x0s, ntransforms, sigma[0], bc);
+  online_point_gaussian_dct(x1, x1s, ntransforms, sigma[0], bc);
+  online_point_gaussian_dct(x2, x2s, ntransforms, sigma[0], bc);
+  online_point_gaussian_dct(x3, x3s, ntransforms, sigma[0], bc);
+  online_point_gaussian_dct(y0, y0s, ntransforms, sigma[0], bc);
+  online_point_gaussian_dct(y1, y1s, ntransforms, sigma[0], bc);
+  online_point_gaussian_dct(y2, y2s, ntransforms, sigma[0], bc);
+  online_point_gaussian_dct(y3, y3s, ntransforms, sigma[0], bc);
   
   for(int i=0;i<ntransforms;i++) 
   {
@@ -586,7 +586,7 @@ void online_local_linear_point_based_smoothing
     y3s[i]+=yp[3]-y3[i];
     
     //calculate the smoothed homography    
-    double tmp[9];
+    float tmp[9];
     compute_H(
       x0s[i],x1s[i],x2s[i],x3s[i],
       y0s[i],y1s[i],y2s[i],y3s[i],      
@@ -634,69 +634,26 @@ void online_smoothing
   float *Hp,         //smooth output matrix transformations
   int   nparams,     //type of matrix transformation
   int   ntransforms, //number of frames of the video
-  float sigma_t,     //temporal Gaussian standard deviation
-  float sigma_x,     //spatial Gaussian standard deviation
-  float sigma_o,     //rotation Gaussian standard deviation
-  float sigma_s,     //scale Gaussian standard deviation
-  float sigma_p,     //projective Gaussian standard deviation
+  float *sigma,      //Gaussian standard deviations
   int   type,        //motion smoothing strategy
   int   bc           //type of boundary condition
 )
 {
-  float *sigma=new float[nparams+1];
-  
-  //set standard deviation for each parameter
-  float tx=sigma_x, ty=sigma_x, theta=sigma_o, sx=sigma_s, sy=sigma_s;
-  sigma[0]=sigma_t;
-  switch(nparams) {
-    case TRANSLATION_TRANSFORM:
-      sigma[1]=tx;
-      sigma[2]=ty;
-      break;
-    case EUCLIDEAN_TRANSFORM:
-      sigma[1]=tx;
-      sigma[2]=ty;
-      sigma[3]=theta;
-      break;
-    case SIMILARITY_TRANSFORM:
-      sigma[1]=tx;
-      sigma[2]=ty;
-      sigma[3]=sx*sin(theta);
-      sigma[4]=sx*sin(theta);
-      break;
-    case AFFINITY_TRANSFORM:
-      sigma[1]=tx;
-      sigma[2]=ty;
-      sigma[3]=sx*sin(theta);
-      sigma[4]=sy*sin(theta);
-      sigma[5]=sx*sin(theta);
-      sigma[6]=sy*sin(theta);
-      break;
-    case HOMOGRAPHY_TRANSFORM:
-      sigma[1]=sx*sin(theta);
-      sigma[2]=sy*sin(theta);
-      sigma[3]=tx;
-      sigma[4]=sx*sin(theta);
-      sigma[5]=sy*sin(theta);
-      sigma[6]=ty;
-      sigma[7]=sigma_p;
-      sigma[8]=sigma_p;
-      break;
-  }
-
   switch(type) 
   {
     default: case LOCAL_MATRIX_BASED_SMOOTHING:
-      online_local_matrix_based_smoothing(H, Hp, nparams, ntransforms, sigma, bc);
+      online_local_matrix_based_smoothing(
+        H, Hp, nparams, ntransforms, sigma, bc
+      );
       break;
     case LOCAL_LINEAR_MATRIX_BASED_SMOOTHING:
       online_local_linear_matrix_based_smoothing(
-        H, Hp, nparams, ntransforms, sigma_t, bc
+        H, Hp, nparams, ntransforms, sigma, bc
       );
       break;
     case LOCAL_LINEAR_POINT_BASED_SMOOTHING:
       online_local_linear_point_based_smoothing(
-        H, Hp, nparams, ntransforms, sigma_t, bc
+        H, Hp, nparams, ntransforms, sigma, bc
       );
       break;
   }

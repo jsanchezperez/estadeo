@@ -544,6 +544,7 @@ void pyramidal_inverse_compositional_algorithm(
     int    nparams, //number of parameters
     int    nxx,     //image width
     int    nyy,     //image height
+    int    nzz,     //number of channels
     int    nscales, //number of scales
     float nu,      //downsampling factor
     float TOL,     //stopping criterion threshold
@@ -552,7 +553,7 @@ void pyramidal_inverse_compositional_algorithm(
     bool   verbose  //switch on messages
 )
 {
-    int size=nxx*nyy;
+    int size=nxx*nyy*nzz;
 
     float **I1s=new float*[nscales];
     float **I2s=new float*[nscales];

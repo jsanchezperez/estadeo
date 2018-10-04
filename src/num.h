@@ -22,14 +22,14 @@
 /** \typedef num
  * We define a typedef "num" for the numeric datatype to use for computation.
  * If the preprocessing symbol `NUM_SINGLE` is defined, then `num` is defined
- * as a float (i.e., single precision). Otherwise, `num` is a double.
+ * as a float (i.e., single precision). Otherwise, `num` is a float.
  */
 
 
-#ifdef NUM_SINGLE
-typedef float num;
-#else
+#ifdef NUM_DOUBLE
 typedef double num;
+#else
+typedef float num;
 #endif
 
 /** \def FFT
@@ -37,24 +37,24 @@ typedef double num;
  * such that it expands to
  *    `fftwf_functionname`  if #num is single,
  * or
- *    `fftw_functionname`   if #num is double.
+ *    `fftw_functionname`   if #num is float.
  */
 /** \brief Token-pasting macro */
 #define _FFTW_CONCAT(A,B)    A ## B
-#ifdef NUM_SINGLE
-#define FFT(S)      _FFTW_CONCAT(fftwf_,S)
-#else
+#ifdef NUM_DOUBLE
 #define FFT(S)      _FFTW_CONCAT(fftw_,S)
+#else
+#define FFT(S)      _FFTW_CONCAT(fftwf_,S)
 #endif
 
 /** \def IMAGEIO_NUM
  * For use with imageio.c, define `IMAGEIO_NUM` to be either `IMAGEIO_SINGLE`
  * or `IMAGEIO_DOUBLE`, depending on whether `NUM_SINGLE` is defined.
  */
-#ifdef NUM_SINGLE
-#define IMAGEIO_NUM     IMAGEIO_SINGLE
-#else
+#ifdef NUM_DOUBLE
 #define IMAGEIO_NUM     IMAGEIO_DOUBLE
+#else
+#define IMAGEIO_NUM     IMAGEIO_SINGLE
 #endif
 
 #endif

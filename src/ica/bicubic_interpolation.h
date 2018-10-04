@@ -18,7 +18,7 @@
   * Neumann boundary condition test
   *
 **/
-int neumann_bc (int x, int nx, bool & out);
+int neumann_bc (int x, int nx);
 
 
 /**

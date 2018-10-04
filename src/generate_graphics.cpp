@@ -8,17 +8,17 @@
 
 using namespace std;
 
-double *read_transforms(char *name, int &nparams, int &ntransforms, int &nx, int &ny)
+float *read_transforms(char *name, int &nparams, int &ntransforms, int &nx, int &ny)
 {
   FILE *fd=fopen(name,"r");
   int r=fscanf(fd,"%d %d %d %d", &nparams, &ntransforms, &nx, &ny);
  
   if(r>0)
   {
-    double *H=new double[nparams*ntransforms];
+    float *H=new float[nparams*ntransforms];
   
     for(int i=0;i<ntransforms;i++) {
-      for(int j=0;j<nparams;j++) r=fscanf(fd, "%lf", &(H[i*nparams+j]));
+      for(int j=0;j<nparams;j++) r=fscanf(fd, "%f", &(H[i*nparams+j]));
     }
     
     return H;
@@ -26,15 +26,15 @@ double *read_transforms(char *name, int &nparams, int &ntransforms, int &nx, int
   return NULL;
 }
 
-void read_file(char *name, std::vector<double> &re)
+void read_file(char *name, std::vector<float> &re)
 {
   //read the input file
   FILE *fd=fopen(name, "r");
   int i=0;
   while(!feof(fd))
   {
-    double r;
-    int t=fscanf(fd, "%lf", &r);
+    float r;
+    int t=fscanf(fd, "%f", &r);
     if(!feof(fd) && t>0) {
       re.push_back(r);
     }
@@ -52,14 +52,14 @@ void write_file (char *name, fftw_complex *out, int N)
   fclose(fd);
 }
 
-void read_points(char *name, std::vector<double> &x, std::vector<double> &y)
+void read_points(char *name, std::vector<float> &x, std::vector<float> &y)
 {
   FILE *fd=fopen(name,"r");
   
   while(!feof(fd))
   {
-    double xx, yy;
-    int r=fscanf(fd, "%lf %lf", &xx, &yy);
+    float xx, yy;
+    int r=fscanf(fd, "%f %f", &xx, &yy);
     
     if(!feof(fd) && r>0) {
       x.push_back(xx);
@@ -70,7 +70,7 @@ void read_points(char *name, std::vector<double> &x, std::vector<double> &y)
 }
 
 
-void write_points(char *name, std::vector<double> &x, std::vector<double> &y)
+void write_points(char *name, std::vector<float> &x, std::vector<float> &y)
 {
   FILE *fd=fopen(name, "w");
   
@@ -81,14 +81,14 @@ void write_points(char *name, std::vector<double> &x, std::vector<double> &y)
   fclose(fd);
 }
 
-void read_points(char *name, std::vector<double> &x)
+void read_points(char *name, std::vector<float> &x)
 {
   FILE *fd=fopen(name,"r");
   
   while(!feof(fd))
   {
-    double xx;
-    int r=fscanf(fd, "%lf", &xx);
+    float xx;
+    int r=fscanf(fd, "%f", &xx);
     
     if(!feof(fd) && r>0) {
       x.push_back(xx);
@@ -98,7 +98,7 @@ void read_points(char *name, std::vector<double> &x)
 }
 
 
-void write_points(char *name, std::vector<double> &x)
+void write_points(char *name, std::vector<float> &x)
 {
   FILE *fd=fopen(name, "w");
   
@@ -118,11 +118,11 @@ void write_points(char *name, std::vector<double> &x)
  */
 void project
 (
-  double x,      //x component of the 2D point
-  double y,      //y component of the 2D point
-  double *p,  //parameters of the transformation
-  double &xp, //x component of the transformed point
-  double &yp, //y component of the transformed point
+  float x,      //x component of the 2D point
+  float y,      //y component of the 2D point
+  float *p,  //parameters of the transformation
+  float &xp, //x component of the transformed point
+  float &yp, //y component of the transformed point
   int nparams //number of parameters
 )
 {
@@ -144,7 +144,7 @@ void project
       yp=p[4]*x+(1+p[5])*y+p[1];
       break;
     case 8:  //p=(h00, h01,..., h21)
-      double d=p[6]*x+p[7]*y+1;
+      float d=p[6]*x+p[7]*y+1;
       xp=((1+p[0])*x+p[1]*y+p[2])/d;
       yp=(p[3]*x+(1+p[4])*y+p[5])/d;
       break;
@@ -163,16 +163,16 @@ void trajectory_graphic(int argc, char *argv[])
     char *out=argv[3];
     int nparams, nframes, nx, ny;
 
-    double *H=read_transforms(file, nparams, nframes, nx, ny);
+    float *H=read_transforms(file, nparams, nframes, nx, ny);
 
-    double xm=nx/2;
-    double ym=ny/2;
+    float xm=nx/2;
+    float ym=ny/2;
 
     FILE*fd=fopen(out, "w");
 
     for(int i=0; i<nframes; i++)
     {
-      double xp, yp;
+      float xp, yp;
 
       project(xm, ym, &H[i*nparams], xp, yp, nparams);
 
@@ -197,20 +197,20 @@ void velocity_graphic(int argc, char *argv[])
     char *out=argv[3];
     int nparams, nframes, nx, ny;
 
-    double *H=read_transforms(file, nparams, nframes, nx, ny);
+    float *H=read_transforms(file, nparams, nframes, nx, ny);
 
-    double xm=nx/2;
-    double ym=ny/2;
+    float xm=nx/2;
+    float ym=ny/2;
 
     FILE*fd=fopen(out, "w");
-    double vx=0;
-    double vy=0;
+    float vx=0;
+    float vy=0;
 
     //fprintf(fd,"%f %f \n", vx, vy);
 
     for(int i=0; i<nframes; i++)
     {
-      double xp, yp;
+      float xp, yp;
 
       project(xm, ym, &H[i*nparams], xp, yp, nparams);
 
@@ -234,26 +234,26 @@ void rotation_graphic(int argc, char *argv[])
     char *out=argv[3];
     int nparams, nframes, nx, ny;
 
-    double *H=read_transforms(file, nparams, nframes, nx, ny);
+    float *H=read_transforms(file, nparams, nframes, nx, ny);
 
-    double x0=0, x1=nx;
-    double y0=ny/2;
+    float x0=0, x1=nx;
+    float y0=ny/2;
     
 
     FILE*fd=fopen(out, "w");
-    double vtheta=0;
-    double avgtheta=0;
+    float vtheta=0;
+    float avgtheta=0;
 
     for(int i=1; i<nframes; i++)
     {
-      double xp1, yp1;
-      double xp2, yp2;
+      float xp1, yp1;
+      float xp2, yp2;
 
       project(x0, y0, &H[i*nparams], xp1, yp1, nparams);
       project(x1, y0, &H[i*nparams], xp2, yp2, nparams);
       
-      double x=xp2-xp1;
-      double y=yp2-yp1;
+      float x=xp2-xp1;
+      float y=yp2-yp1;
 
       vtheta=atan2(y,x)*180/3.1415926;
       avgtheta+=vtheta;
@@ -281,18 +281,18 @@ void zoom_graphic(int argc, char *argv[])
     char *out=argv[3];
     int nparams, nframes, nx, ny;
 
-    double *H=read_transforms(file, nparams, nframes, nx, ny);
+    float *H=read_transforms(file, nparams, nframes, nx, ny);
 
     FILE*fd=fopen(out, "w");
-    double zoom=0;
-    double avgzoom=0;
+    float zoom=0;
+    float avgzoom=0;
 
     for(int i=1; i<nframes; i++)
     {
-      double xp0, yp0;
-      double xp1, yp1;
-      double xp2, yp2;
-      double xp3, yp3;
+      float xp0, yp0;
+      float xp1, yp1;
+      float xp2, yp2;
+      float xp3, yp3;
 
       project(0, 0, &H[i*nparams], xp0, yp0, nparams);
       project(0, ny, &H[i*nparams], xp1, yp1, nparams);
@@ -300,26 +300,26 @@ void zoom_graphic(int argc, char *argv[])
       project(nx, ny, &H[i*nparams], xp3, yp3, nparams);
 
       //area del triangulo segun formula de Heron
-      const double dx1=xp1-xp0;
-      const double dx2=xp2-xp0;
-      const double dx3=xp2-xp1;
-      const double dx4=xp3-xp2;
-      const double dx5=xp3-xp1;
-      const double dy1=yp1-yp0;
-      const double dy2=yp2-yp0;
-      const double dy3=yp2-yp1;
-      const double dy4=yp3-yp2;
-      const double dy5=yp3-yp1;
-      const double a=sqrt(dx1*dx1+dy1*dy1);
-      const double b=sqrt(dx2*dx2+dy2*dy2);
-      const double c=sqrt(dx3*dx3+dy3*dy3);
-      const double d=sqrt(dx4*dx4+dy4*dy4);
-      const double e=sqrt(dx5*dx5+dy5*dy5);
-      const double s1=(a+b+c)/2;
-      const double s2=(e+d+c)/2;
-      const double A1=nx*ny;
-      const double A2=sqrt(s1*(s1-a)*(s1-b)*(s1-c));
-      const double A3=sqrt(s2*(s2-e)*(s2-d)*(s2-c));
+      const float dx1=xp1-xp0;
+      const float dx2=xp2-xp0;
+      const float dx3=xp2-xp1;
+      const float dx4=xp3-xp2;
+      const float dx5=xp3-xp1;
+      const float dy1=yp1-yp0;
+      const float dy2=yp2-yp0;
+      const float dy3=yp2-yp1;
+      const float dy4=yp3-yp2;
+      const float dy5=yp3-yp1;
+      const float a=sqrt(dx1*dx1+dy1*dy1);
+      const float b=sqrt(dx2*dx2+dy2*dy2);
+      const float c=sqrt(dx3*dx3+dy3*dy3);
+      const float d=sqrt(dx4*dx4+dy4*dy4);
+      const float e=sqrt(dx5*dx5+dy5*dy5);
+      const float s1=(a+b+c)/2;
+      const float s2=(e+d+c)/2;
+      const float A1=nx*ny;
+      const float A2=sqrt(s1*(s1-a)*(s1-b)*(s1-c));
+      const float A3=sqrt(s2*(s2-e)*(s2-d)*(s2-c));
       
       zoom=(A2+A3)/A1;
       avgzoom+=zoom;
@@ -344,7 +344,7 @@ void fft(int argc, char *argv[])
     printf("\nUsage: %s f infile [outfile] [Nrows] \n\n", argv[0]);
   else
   {
-    std::vector<double> re;
+    std::vector<float> re;
     read_file(argv[2], re);
 
     int N=re.size();
@@ -388,8 +388,8 @@ void linear_scale_space(int argc, char *argv[])
     char *file1=argv[2];
     char *file2=argv[3];
     char *out=argv[4];
-    vector<double> x1, y1, x2, y2;
-    vector<double> dx, dy;
+    vector<float> x1, y1, x2, y2;
+    vector<float> dx, dy;
     
     read_points(file1, x1, y1);
     read_points(file2, x2, y2);
@@ -417,8 +417,8 @@ void scale_space_value(int argc, char *argv[])
     char *file1=argv[2];
     char *file2=argv[3];
     char *out=argv[4];
-    vector<double> x1, x2;
-    vector<double> dx;
+    vector<float> x1, x2;
+    vector<float> dx;
     
     read_points(file1, x1);
     read_points(file2, x2);
@@ -434,12 +434,12 @@ void scale_space_value(int argc, char *argv[])
 }
 
 
-void dct_convolution(vector<double> &x, vector<double> &sx, float sigma)
+void dct_convolution(vector<float> &x, vector<float> &sx, float sigma)
 {
   int N=x.size();
   
-  double *dest=new double[3*N-2];
-  double *src=new double[3*N-2];
+  float *dest=new float[3*N-2];
+  float *src=new float[3*N-2];
   dct_coeffs c;
 
   
@@ -490,8 +490,8 @@ void smooth_points(int argc, char *argv[])
     char *file=argv[2];
     char *out=argv[3];
     float sigma=atof(argv[4]);
-    vector<double> x, y;
-    vector<double> sx, sy;
+    vector<float> x, y;
+    vector<float> sx, sy;
     
     read_points(file, x, y);
         
@@ -511,15 +511,15 @@ void smooth_scalars(int argc, char *argv[])
     char *file=argv[2];
     char *out=argv[3];
     float sigma=atof(argv[4]);
-    vector<double> x;
-    vector<double> sx;
+    vector<float> x;
+    vector<float> sx;
     
     read_points(file, x);
     
     int N=x.size();
     
-    double *dest=new double[3*N-2];
-    double *src=new double[3*N-2];
+    float *dest=new float[3*N-2];
+    float *src=new float[3*N-2];
     dct_coeffs c;
 
     for(int i=N-1; i<2*N-1; i++)

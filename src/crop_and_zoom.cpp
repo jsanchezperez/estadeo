@@ -9,7 +9,7 @@
 
 #include "crop_and_zoom.h"
 #include "sutherland_hodgman.h"
-#include "ica/transformation.h"
+#include "transformation.h"
 
 
 #include <stdio.h>

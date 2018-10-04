@@ -99,9 +99,9 @@ typedef struct dct_coeffs_
 } dct_coeffs;
 
 int dct_precomp(dct_coeffs *c, num *dest, const num *src,
-    long N, long stride, double sigma);
+    long N, long stride, float sigma);
 int dct_precomp_image(dct_coeffs *c, num *dest, const num *src,
-    int width, int height, int num_channels, double sigma);
+    int width, int height, int num_channels, float sigma);
 void dct_free(dct_coeffs *c);
 void dct_gaussian_conv(dct_coeffs c);
 

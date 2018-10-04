@@ -19,11 +19,7 @@ void estadeo(
   int nframes,         //number of frames of the video
   int nparams,         //type of matrix transformation
   int smooth_strategy, //motion smoothing strategy
-  float sigma_t,       //temporal Gaussian standard deviation
-  float sigma_x,       //spatial Gaussian standard deviation
-  float sigma_o,       //rotational Gaussian standard deviation
-  float sigma_s,       //scale Gaussian standard deviation
-  float sigma_p,       //projective Gaussian standard deviation
+  float *sigma,        //Gaussian standard deviations
   int bc,              //boundary condition for smoothing
   int postprocessing,  //method for dealing with empty regions
   char *in_transform,  //input file with the computed transformations
@@ -38,7 +34,7 @@ void estadeo(
   * Function for Online Video Estabilization
   * 
 **/
-void online_estadeo(
+void estadeo_online(
   float *I,            //input grayscale video to estabilize
   float *Ic,           //input color video to estabilize
   int nx,              //number of columns 
@@ -47,11 +43,7 @@ void online_estadeo(
   int nframes,         //number of frames of the video
   int nparams,         //type of matrix transformation
   int smooth_strategy, //motion smoothing strategy
-  float sigma_t,       //temporal Gaussian standard deviation
-  float sigma_x,       //spatial Gaussian standard deviation
-  float sigma_o,       //rotational Gaussian standard deviation
-  float sigma_s,       //scale Gaussian standard deviation
-  float sigma_p,       //projective Gaussian standard deviation
+  float *sigma,        //Gaussian standard deviations
   int bc,              //boundary condition for smoothing
   int postprocessing,  //method for dealing with empty regions
   char *out_stransform,//output file to write the stabilizing transformations

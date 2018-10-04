@@ -92,18 +92,19 @@ void robust_inverse_compositional_algorithm(
   *
 **/
 void pyramidal_inverse_compositional_algorithm(
-    float *I1,     //first image
-    float *I2,     //second image
-    float *p,      //parameters of the transform
+    float *I1,      //first image
+    float *I2,      //second image
+    float *p,       //parameters of the transform
     int    nparams, //number of parameters
     int    nxx,     //image width
     int    nyy,     //image height
+    int    nzz,     //number of channels
     int    nscales, //number of scales
-    float nu,      //downsampling factor
-    float TOL,     //stopping criterion threshold
+    float nu,       //downsampling factor
+    float TOL,      //stopping criterion threshold
     int    robust,  //robust error function
-    float lambda,  //parameter of robust error function
-    bool   verbose  //switch on messages
+    float lambda,   //parameter of robust error function
+    bool   verbose=0 //switch on messages
 );
 
 #endif

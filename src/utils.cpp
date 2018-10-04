@@ -75,7 +75,7 @@ void save_transforms(
 
     for(int i=0;i<ntransforms;i++)
     {
-      for(int j=0;j<nparams;j++) fprintf(fd, "%.15f ", H[i*nparams+j]);
+      for(int j=0;j<nparams;j++) fprintf(fd, "%.15lf ", H[i*nparams+j]);
       fprintf(fd, "\n");
     }
     fclose(fd);

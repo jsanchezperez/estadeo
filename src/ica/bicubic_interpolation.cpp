@@ -17,18 +17,11 @@
   *
 **/
 int
-neumann_bc (int x, int nx, bool & out)
+neumann_bc (int x, int nx)
 {
-  if (x<0)
-    {
-      out = true;
-      x = 0;
-    }
+  if (x<0) x=0;
   else if (x >= nx)
-    {
-      out = true;
-      x = nx - 1;
-    }
+    x = nx - 1;
   return x;
 }
 
@@ -87,59 +80,53 @@ bicubic_interpolation(
   bool border_out //if true, put zeros outside the region
 )
 {
-  int sx = (uu < 0) ? -1 : 1;
-  int sy = (vv < 0) ? -1 : 1;
-
-  int x, y, mx, my, dx, dy, ddx, ddy;
-  bool out = false;
-
-  x = neumann_bc ((int) uu, nx, out);
-  y = neumann_bc ((int) vv, ny, out);
-  mx = neumann_bc ((int) uu - sx, nx, out);
-  my = neumann_bc ((int) vv - sy, ny, out);
-  dx = neumann_bc ((int) uu + sx, nx, out);
-  dy = neumann_bc ((int) vv + sy, ny, out);
-  ddx = neumann_bc ((int) uu + 2 * sx, nx, out);
-  ddy = neumann_bc ((int) vv + 2 * sy, ny, out);
-
-  if (out && border_out) 
+  if(border_out && (uu>nx || uu<-1 || vv>ny || vv<-1)) 
     return 0;
-  else
-    {
-      //obtain the interpolation points of the image
-      float p11 = input[mx  + nx * my];
-      float p12 = input[x   + nx * my];
-      float p13 = input[dx  + nx * my];
-      float p14 = input[ddx + nx * my];
+  else {
+    int sx = (uu < 0) ? -1 : 1;
+    int sy = (vv < 0) ? -1 : 1;
+    int x, y, mx, my, dx, dy, ddx, ddy;
+  
+    x = neumann_bc ((int) uu, nx);
+    y = neumann_bc ((int) vv, ny);
+    mx = neumann_bc ((int) uu - sx, nx);
+    my = neumann_bc ((int) vv - sy, ny);
+    dx = neumann_bc ((int) uu + sx, nx);
+    dy = neumann_bc ((int) vv + sy, ny);
+    ddx = neumann_bc ((int) uu + 2 * sx, nx);
+    ddy = neumann_bc ((int) vv + 2 * sy, ny);
 
-      float p21 = input[mx  + nx * y];
-      float p22 = input[x   + nx * y];
-      float p23 = input[dx  + nx * y];
-      float p24 = input[ddx + nx * y];
+    //obtain the interpolation points of the image
+    float p11 = input[mx  + nx * my];
+    float p12 = input[x   + nx * my];
+    float p13 = input[dx  + nx * my];
+    float p14 = input[ddx + nx * my];
 
-      float p31 = input[mx  + nx * dy];
-      float p32 = input[x   + nx * dy];
-      float p33 = input[dx  + nx * dy];
-      float p34 = input[ddx + nx * dy];
+    float p21 = input[mx  + nx * y];
+    float p22 = input[x   + nx * y];
+    float p23 = input[dx  + nx * y];
+    float p24 = input[ddx + nx * y];
 
-      float p41 = input[mx  + nx * ddy];
-      float p42 = input[x   + nx * ddy];
-      float p43 = input[dx  + nx * ddy];
-      float p44 = input[ddx + nx * ddy];
+    float p31 = input[mx  + nx * dy];
+    float p32 = input[x   + nx * dy];
+    float p33 = input[dx  + nx * dy];
+    float p34 = input[ddx + nx * dy];
 
-      //create array
-      float pol[4][4] = { 
-        {p11, p21, p31, p41}, {p12, p22, p32, p42},
-        {p13, p23, p33, p43}, {p14, p24, p34, p44}
-      };
+    float p41 = input[mx  + nx * ddy];
+    float p42 = input[x   + nx * ddy];
+    float p43 = input[dx  + nx * ddy];
+    float p44 = input[ddx + nx * ddy];
 
-      //return interpolation
-      return bicubic_interpolation (pol, (float) uu - x, (float) vv - y);
-    }
+    //create array
+    float pol[4][4] = { 
+      {p11, p21, p31, p41}, {p12, p22, p32, p42},
+      {p13, p23, p33, p43}, {p14, p24, p34, p44}
+    };
+
+    //return interpolation
+    return bicubic_interpolation (pol, (float) uu - x, (float) vv - y);
+  }
 }
-
-
-
 
 
 /**

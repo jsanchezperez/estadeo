@@ -10,7 +10,7 @@
 #include "motion_smoothing.h"
 #include "crop_and_zoom.h"
 #include "utils.h"
-#include "ica/transformation.h"
+#include "transformation.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,10 +20,7 @@
 #define PAR_DEFAULT_TRANSFORM SIMILARITY_TRANSFORM
 #define PAR_DEFAULT_SMOOTHING LOCAL_MATRIX_BASED_SMOOTHING
 #define PAR_DEFAULT_SIGMA_T 30.0
-#define PAR_DEFAULT_SIGMA_X 15.0
-#define PAR_DEFAULT_SIGMA_O 3.141592/6
-#define PAR_DEFAULT_SIGMA_S 1.3
-#define PAR_DEFAULT_SIGMA_P 0.0001
+#define PAR_DEFAULT_SIGMA_H 100.0
 #define PAR_DEFAULT_BC NEUMANN_BC
 #define PAR_DEFAULT_POSTPROCESS NO_POSTPROCESS
 #define PAR_DEFAULT_OUTTRANSFORM "transform.mat"
@@ -73,16 +70,24 @@ void print_help(char *name)
   printf("              5-local linear matrix-based smoothing\n");
   printf("              6-local linear point-based smoothing\n");
   printf("              default value %d\n", PAR_DEFAULT_SMOOTHING);
-  printf("   -st N     Gaussian standard deviation for temporal smoothing\n");
+  printf("   -st N      Gaussian standard deviation for temporal dimension\n");
   printf("              default value %f\n", PAR_DEFAULT_SIGMA_T);
-  printf("   -sx N     Gaussian standard deviation for spatial smoothing\n");
-  printf("              default value %f\n", PAR_DEFAULT_SIGMA_X);
-  printf("   -so N     Gaussian standard deviation for rotation smoothing\n");
-  printf("              default value %f\n", PAR_DEFAULT_SIGMA_O);
-  printf("   -ss N     Gaussian standard deviation for scale smoothing\n");
-  printf("              default value %f\n", PAR_DEFAULT_SIGMA_S);
-  printf("   -sp N     Gaussian standard deviation for perspect. smoothing\n");
-  printf("              default value %f\n", PAR_DEFAULT_SIGMA_P);
+  printf("   -s11 N     Gaussian standard deviation for h11\n");
+  printf("              default value %f\n", PAR_DEFAULT_SIGMA_H);
+  printf("   -s12 N     Gaussian standard deviation for h12\n");
+  printf("              default value %f\n", PAR_DEFAULT_SIGMA_H);
+  printf("   -s13 N     Gaussian standard deviation for h13\n");
+  printf("              default value %f\n", PAR_DEFAULT_SIGMA_H);
+  printf("   -s21 N     Gaussian standard deviation for h21\n");
+  printf("              default value %f\n", PAR_DEFAULT_SIGMA_H);
+  printf("   -s22 N     Gaussian standard deviation for h22\n");
+  printf("              default value %f\n", PAR_DEFAULT_SIGMA_H);
+  printf("   -s23 N     Gaussian standard deviation for h23\n");
+  printf("              default value %f\n", PAR_DEFAULT_SIGMA_H);
+  printf("   -s31 N     Gaussian standard deviation for h31\n");
+  printf("              default value %f\n", PAR_DEFAULT_SIGMA_H);
+  printf("   -s32 N     Gaussian standard deviation for h32\n");
+  printf("              default value %f\n", PAR_DEFAULT_SIGMA_H);
   printf("   -b N     type of boundary condition: \n");
   printf("              0-constant; 1-neumann; 2-dirichlet\n");
   printf("              default value %d\n", PAR_DEFAULT_BC);
@@ -115,11 +120,7 @@ int read_parameters(
   int   &nparams,
   int   &online, 
   int   &smooth_strategy,
-  float &sigma_t,
-  float &sigma_x,
-  float &sigma_o,
-  float &sigma_s,
-  float &sigma_p,
+  float *sigma,
   int   &boundary_condition, 
   int   &postprocessing,
   int   &verbose
@@ -145,11 +146,15 @@ int read_parameters(
     strcpy(video_out,PAR_DEFAULT_OUTVIDEO);
     nparams=PAR_DEFAULT_TRANSFORM;
     smooth_strategy=PAR_DEFAULT_SMOOTHING;
-    sigma_t=PAR_DEFAULT_SIGMA_T;
-    sigma_x=PAR_DEFAULT_SIGMA_X;
-    sigma_o=PAR_DEFAULT_SIGMA_O;
-    sigma_s=PAR_DEFAULT_SIGMA_S;
-    sigma_p=PAR_DEFAULT_SIGMA_P;
+    sigma[0]=PAR_DEFAULT_SIGMA_T;
+    sigma[1]=PAR_DEFAULT_SIGMA_H;
+    sigma[2]=PAR_DEFAULT_SIGMA_H;
+    sigma[3]=PAR_DEFAULT_SIGMA_H;
+    sigma[4]=PAR_DEFAULT_SIGMA_H;
+    sigma[5]=PAR_DEFAULT_SIGMA_H;
+    sigma[6]=PAR_DEFAULT_SIGMA_H;
+    sigma[7]=PAR_DEFAULT_SIGMA_H;
+    sigma[8]=PAR_DEFAULT_SIGMA_H;
     boundary_condition=PAR_DEFAULT_BC;
     postprocessing=PAR_DEFAULT_POSTPROCESS;
     verbose=PAR_DEFAULT_VERBOSE;
@@ -171,24 +176,40 @@ int read_parameters(
 
       if(strcmp(argv[i],"-st")==0)
         if(i<argc-1)
-          sigma_t=atof(argv[++i]);
+          sigma[0]=atof(argv[++i]);
         
-      if(strcmp(argv[i],"-sx")==0)
+      if(strcmp(argv[i],"-s11")==0)
         if(i<argc-1)
-          sigma_x=atof(argv[++i]);
+          sigma[1]=atof(argv[++i]);
         
-      if(strcmp(argv[i],"-so")==0)
+      if(strcmp(argv[i],"-s12")==0)
         if(i<argc-1)
-          sigma_o=atof(argv[++i]);
+          sigma[2]=atof(argv[++i]);
         
-      if(strcmp(argv[i],"-ss")==0)
+      if(strcmp(argv[i],"-s13")==0)
         if(i<argc-1)
-          sigma_s=atof(argv[++i]);
+          sigma[3]=atof(argv[++i]);
+        
+      if(strcmp(argv[i],"-s21")==0)
+        if(i<argc-1)
+          sigma[4]=atof(argv[++i]);
 
-      if(strcmp(argv[i],"-sp")==0)
+      if(strcmp(argv[i],"-s22")==0)
         if(i<argc-1)
-          sigma_p=atof(argv[++i]);
-        
+          sigma[5]=atof(argv[++i]);
+
+      if(strcmp(argv[i],"-s23")==0)
+        if(i<argc-1)
+          sigma[6]=atof(argv[++i]);
+
+      if(strcmp(argv[i],"-s31")==0)
+        if(i<argc-1)
+          sigma[7]=atof(argv[++i]);
+
+      if(strcmp(argv[i],"-s32")==0)
+        if(i<argc-1)
+          sigma[8]=atof(argv[++i]);
+
       if(strcmp(argv[i],"-b")==0)
         if(i<argc-1)
           boundary_condition=atoi(argv[++i]);
@@ -220,23 +241,31 @@ int read_parameters(
 
     //check parameter values
     if(nparams!=2 && nparams!=3 && nparams!=4 && 
-      nparams!=6 && nparams!=8) nparams=PAR_DEFAULT_TRANSFORM;
+       nparams!=6 && nparams!=8) nparams=PAR_DEFAULT_TRANSFORM;
     if(smooth_strategy<0 || smooth_strategy>N_SMOOTH_METHODS)
-      smooth_strategy=PAR_DEFAULT_SMOOTHING;
-    if(sigma_t<0.01)
-      sigma_t=0.01;
-    if(sigma_x<1E-5)
-      sigma_x=1E-5;
-    if(sigma_o<1E-5)
-      sigma_o=1E-5;
-    if(sigma_s<1E-5)
-      sigma_s=1E-5;
-    if(sigma_p<1E-6)
-      sigma_p=1E-6;
+       smooth_strategy=PAR_DEFAULT_SMOOTHING;
     if(boundary_condition<0 || boundary_condition>2)
-      boundary_condition=PAR_DEFAULT_BC;
+       boundary_condition=PAR_DEFAULT_BC;
     if(postprocessing<0 || postprocessing>2)
-      postprocessing=PAR_DEFAULT_POSTPROCESS;
+       postprocessing=PAR_DEFAULT_POSTPROCESS;
+    if(sigma[0]<0.01)
+       sigma[0]=0.01;
+    if(sigma[1]<1E-5)
+       sigma[1]=1E-5;
+    if(sigma[2]<1E-5)
+       sigma[2]=1E-5;
+    if(sigma[3]<1E-5)
+       sigma[3]=1E-5;
+    if(sigma[4]<1E-5)
+       sigma[4]=1E-5;
+    if(sigma[5]<1E-5)
+       sigma[5]=1E-5;
+    if(sigma[6]<1E-5)
+       sigma[6]=1E-5;
+    if(sigma[7]<1E-5)
+       sigma[7]=1E-5;
+    if(sigma[8]<1E-5)
+       sigma[8]=1E-5;
   }
 
   return 1;
@@ -279,21 +308,19 @@ void rgb2gray(
 int main (int argc, char *argv[])
 {
   //parameters of the method
-  char *video_in, video_out[300];
-  char *out_transform, *in_transform, *out_smooth_transform;
-  int  width, height, nchannels=3, nframes;
-  int  nparams, online, smooth_strategy; 
-  int  boundary_condition, postprocessing;
-  float sigma_t, sigma_x, sigma_o, sigma_s, sigma_p;
-  int  verbose;
+  char  *video_in, video_out[300];
+  char  *out_transform, *in_transform, *out_smooth_transform;
+  int   width, height, nchannels=3, nframes;
+  int   nparams, online, smooth_strategy; 
+  int   boundary_condition, postprocessing, verbose;
+  float sigma[9];
   
   //read the parameters from the console
   int result=read_parameters(
-        argc, argv, &video_in, video_out, &out_transform, &in_transform, 
-        &out_smooth_transform, width, height, nframes, nparams, online,
-        smooth_strategy, sigma_t, sigma_x, sigma_o, sigma_s, sigma_p, 
-        boundary_condition, postprocessing, verbose
-      );
+    argc, argv, &video_in, video_out, &out_transform, &in_transform, 
+    &out_smooth_transform, width, height, nframes, nparams, online,
+    smooth_strategy, sigma, boundary_condition, postprocessing, verbose
+  );
   
   if(result)
   {
@@ -302,11 +329,12 @@ int main (int argc, char *argv[])
       printf(
         " Input video: '%s'\n Output video: '%s'\n Width: %d, Height: %d "
         " Number of frames: %d\n Transformation: %d, " 
-        " Smoothing: %d, S_t: %f, S_x: %f, S_o: %f, S_s: %f, S_p: %f\n"
+        " Smoothing: %d, Sigmas: %f, %f, %f, %f, %f, %f, %f, %f, %f\n"
         " BC: %d \n Postprocess: %d\n",
         video_in, video_out, width, height, nframes, nparams,
-        smooth_strategy, sigma_t, sigma_x, sigma_o, sigma_s, sigma_p, 
-        boundary_condition, postprocessing
+        smooth_strategy, sigma[0], sigma[1], sigma[2], sigma[3], sigma[4],
+        sigma[5], sigma[6], sigma[7], sigma[8], boundary_condition, 
+        postprocessing
       );
     
     int fsize=width*height;
@@ -339,17 +367,16 @@ int main (int argc, char *argv[])
 
     //call the method for video stabilization
     if(online)
-      online_estadeo(
-        Ig, Ic, width, height, nchannels, nframes, nparams, 
-        smooth_strategy, sigma_t, sigma_x, sigma_o, sigma_s, sigma_p, 
-        boundary_condition, postprocessing, out_smooth_transform, verbose
+      estadeo_online(
+        Ig, Ic, width, height, nchannels, nframes, nparams, smooth_strategy,
+        sigma, boundary_condition, postprocessing, out_smooth_transform, 
+        verbose
       );
     else
       estadeo(
-        Ig, Ic, width, height, nchannels, nframes, nparams, 
-        smooth_strategy, sigma_t, sigma_x, sigma_o, sigma_s, sigma_p, 
-        boundary_condition, postprocessing, in_transform, out_transform,
-        out_smooth_transform, verbose
+        Ig, Ic, width, height, nchannels, nframes, nparams, smooth_strategy, 
+        sigma, boundary_condition, postprocessing, in_transform, 
+        out_transform, out_smooth_transform, verbose
       );
     
     //convert the stabilized video to unsigned char

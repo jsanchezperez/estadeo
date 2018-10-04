@@ -3,14 +3,12 @@
 // copy of this license along this program. If not, see
 // <http://www.opensource.org/licenses/bsd-license.html>.
 //
+// Copyright (C) 2018, Thibaud Briand <thibaud.briand@enpc.fr>
 // Copyright (C) 2015, Javier Sánchez Pérez <jsanchez@dis.ulpgc.es>
 // All rights reserved.
 
 #ifndef MATRIX_H
 #define MATRIX_H
-
-//Multiplication of a square matrix and a vector
-void Axb(float *A, float *b, float *p, int n);
 
 //Multiplication of a square matrix and a vector
 void Axb(float *A, float *b, float *p, int n);
@@ -31,6 +29,10 @@ void AtA(float *A, float *B, int n, int m);
 //B should be initialized to zero outside
 void sAtA(float s, float *A, float *B, int n, int m);
 
+//Multiplication with a scalar
+//B should be initialized to zero outside
+void sA(float s, float *A, float *B, int m);
+
 //Function to compute the inverse of a matrix
 //through Gaussian elimination
 int inverse(float *A, float *A_1, int N = 3);
@@ -50,6 +52,7 @@ void compute_H
   float y1p, float y2p, float y3p, float y4p,
   float *H
 );
+
 
 
 #endif

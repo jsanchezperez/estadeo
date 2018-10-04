@@ -47,14 +47,14 @@
  * source array is overwritten with the result).
  *
  * \note For use of the #num typedef with FFTW's APIs, the macro
- * `FFT(functionname)` expands to `fftw_functionname` if #num is double or
+ * `FFT(functionname)` expands to `fftw_functionname` if #num is float or
  * `fftwf_functionname` if #num is float.
  */
 int dct_precomp(dct_coeffs *c, num *dest, const num *src,
-    long N, long stride, double sigma)
+    long N, long stride, float sigma)
 {
     const fftw_r2r_kind dct_2 = FFTW_REDFT10, dct_3 = FFTW_REDFT01;
-    double temp;
+    float temp;
     int length = N;
     
     assert(c && dest && src && N > 0 && stride != 0 && sigma > 0);
@@ -98,12 +98,12 @@ int dct_precomp(dct_coeffs *c, num *dest, const num *src,
  * source array is overwritten with the result).
  */
 int dct_precomp_image(dct_coeffs *c, num *dest, const num *src,
-    int width, int height, int num_channels, double sigma)
+    int width, int height, int num_channels, float sigma)
 {
     const fftw_r2r_kind dct_2[] = {FFTW_REDFT10, FFTW_REDFT10};
     const fftw_r2r_kind dct_3[] = {FFTW_REDFT01, FFTW_REDFT01};
     const int dist = width * height;
-    double temp;
+    float temp;
     int size[2];
     
     assert(c && dest && src && width > 0 && height > 0 && sigma > 0);
