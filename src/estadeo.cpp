@@ -209,6 +209,7 @@ void estadeo(
   int nframes,         //number of frames of the video
   int nparams,         //type of matrix transformation
   int smooth_strategy, //motion smoothing strategy
+  int bilateral,       //strategies for the bilateral filter
   float *sigma,        //Gaussian standard deviations
   int bc,              //boundary condition for smoothing
   int postprocessing,  //method for dealing with empty regions
@@ -261,7 +262,7 @@ void estadeo(
     printf("\n 2-Motion smoothing:\n");
 
   motion_smoothing(
-    H, Hp, nparams, nframes, sigma, smooth_strategy, bc, verbose
+    H, Hp, nparams, nframes, bilateral, sigma, smooth_strategy, bc, verbose
   );
 
   //save the stabilizing transformation 
@@ -318,6 +319,7 @@ void estadeo_online(
   int nframes,         //number of frames of the video
   int nparams,         //type of matrix transformation
   int smooth_strategy, //motion smoothing strategy
+  int bilateral,       //strategies for the bilateral filter
   float *sigma,        //Gaussian standard deviations
   int bc,              //boundary condition for smoothing
   int postprocessing,  //method for dealing with empty regions
@@ -350,7 +352,9 @@ void estadeo_online(
     
     //step 2. Smooth the last transformation 
     gettimeofday(&t2, NULL);
-    online_smoothing(H, Hp, nparams, f+1, sigma, smooth_strategy, bc);
+    online_smoothing(
+      H, Hp, nparams, f+1, bilateral, sigma, smooth_strategy, bc
+    );
     
     //step 3. Warp the image
     gettimeofday(&t3, NULL);
@@ -371,8 +375,9 @@ void estadeo_online(
   if(out_stransform!=NULL)
   {
     if(verbose)
-      printf("\n  Write smoothed transformations to file '%s'\n", 
-             out_stransform);
+      printf(
+        "\n  Write smoothed transformations to file '%s'\n", out_stransform
+      );
 
     float *Ho=new float[nframes*nparams];
     compute_smooth_transforms(H, Hp, Ho, nparams, nframes);

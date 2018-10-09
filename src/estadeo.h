@@ -19,6 +19,7 @@ void estadeo(
   int nframes,         //number of frames of the video
   int nparams,         //type of matrix transformation
   int smooth_strategy, //motion smoothing strategy
+  int bilateral,       //strategies for the bilateral filter
   float *sigma,        //Gaussian standard deviations
   int bc,              //boundary condition for smoothing
   int postprocessing,  //method for dealing with empty regions
@@ -43,6 +44,7 @@ void estadeo_online(
   int nframes,         //number of frames of the video
   int nparams,         //type of matrix transformation
   int smooth_strategy, //motion smoothing strategy
+  int bilateral,       //strategies for the bilateral filter
   float *sigma,        //Gaussian standard deviations
   int bc,              //boundary condition for smoothing
   int postprocessing,  //method for dealing with empty regions

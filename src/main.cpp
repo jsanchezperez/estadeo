@@ -19,6 +19,7 @@
 #define PAR_DEFAULT_OUTVIDEO "output_video.raw"
 #define PAR_DEFAULT_TRANSFORM SIMILARITY_TRANSFORM
 #define PAR_DEFAULT_SMOOTHING LOCAL_MATRIX_BASED_SMOOTHING
+#define PAR_DEFAULT_BILATERAL BILATERAL_COMPOSED
 #define PAR_DEFAULT_SIGMA_T 30.0
 #define PAR_DEFAULT_SIGMA_H 100.0
 #define PAR_DEFAULT_BC NEUMANN_BC
@@ -58,18 +59,21 @@ void print_help(char *name)
   printf("   -o name  output video name to write the computed raw video\n");
   printf("              default value '%s'\n", PAR_DEFAULT_OUTVIDEO);
   printf("   -t N     transformation type to be computed:\n");
-  printf("              2-translation; 3-Euclidean transform;\n");
-  printf("              4-similarity; 6-affinity; 8-homography\n"); 
+  printf("              2.translation; 3.Euclidean transform;\n");
+  printf("              4.similarity; 6.affinity; 8.homography\n"); 
   printf("              default value %d\n", PAR_DEFAULT_TRANSFORM);
   printf("   -m N     motion smoothing strategy:\n");
-  printf("              0-pure composition;\n");
-  printf("              1-compositional smoothing;\n");
-  printf("              2-compositional local smoothing; \n");
-  printf("              3-local matrix-based smoothing;\n");
-  printf("              4-local point-based smoothing\n");
-  printf("              5-local linear matrix-based smoothing\n");
-  printf("              6-local linear point-based smoothing\n");
+  printf("              0.pure composition;\n");
+  printf("              1.compositional smoothing;\n");
+  printf("              2.compositional local smoothing; \n");
+  printf("              3.local matrix-based smoothing;\n");
+  printf("              4.local point-based smoothing\n");
+  printf("              5.local linear matrix-based smoothing\n");
+  printf("              6.local linear point-based smoothing\n");
   printf("              default value %d\n", PAR_DEFAULT_SMOOTHING);
+  printf("   -bf N      strategy for bilateral filtering\n");
+  printf("              0.no bilateral; 1.independent; 2.composed\n");
+  printf("              default value %d\n", PAR_DEFAULT_BILATERAL);
   printf("   -st N      Gaussian standard deviation for temporal dimension\n");
   printf("              default value %f\n", PAR_DEFAULT_SIGMA_T);
   printf("   -s11 N     Gaussian standard deviation for h11\n");
@@ -89,10 +93,10 @@ void print_help(char *name)
   printf("   -s32 N     Gaussian standard deviation for h32\n");
   printf("              default value %f\n", PAR_DEFAULT_SIGMA_H);
   printf("   -b N     type of boundary condition: \n");
-  printf("              0-constant; 1-neumann; 2-dirichlet\n");
+  printf("              0.constant; 1.Neumann; 2.Dirichlet\n");
   printf("              default value %d\n", PAR_DEFAULT_BC);
   printf("   -p N     video postprocessing \n");
-  printf("              0-no postprocessing; 1-fast crop&zoom; 2-crop&zoom\n");
+  printf("              0.no postprocessing; 1.fast crop&zoom; 2.crop&zoom\n");
   printf("              default value %d\n", PAR_DEFAULT_POSTPROCESS);
   printf("   -w name  write transformations to file\n");
   printf("   -l name  load transformations from file\n");
@@ -120,6 +124,7 @@ int read_parameters(
   int   &nparams,
   int   &online, 
   int   &smooth_strategy,
+  int   &bilateral,
   float *sigma,
   int   &boundary_condition, 
   int   &postprocessing,
@@ -146,6 +151,7 @@ int read_parameters(
     strcpy(video_out,PAR_DEFAULT_OUTVIDEO);
     nparams=PAR_DEFAULT_TRANSFORM;
     smooth_strategy=PAR_DEFAULT_SMOOTHING;
+    bilateral=PAR_DEFAULT_BILATERAL;
     sigma[0]=PAR_DEFAULT_SIGMA_T;
     sigma[1]=PAR_DEFAULT_SIGMA_H;
     sigma[2]=PAR_DEFAULT_SIGMA_H;
@@ -173,6 +179,10 @@ int read_parameters(
       if(strcmp(argv[i],"-m")==0)
         if(i<argc-1)
           smooth_strategy=atoi(argv[++i]);
+
+      if(strcmp(argv[i],"-bf")==0)
+        if(i<argc-1)
+          bilateral=atoi(argv[++i]);
 
       if(strcmp(argv[i],"-st")==0)
         if(i<argc-1)
@@ -248,6 +258,8 @@ int read_parameters(
        boundary_condition=PAR_DEFAULT_BC;
     if(postprocessing<0 || postprocessing>2)
        postprocessing=PAR_DEFAULT_POSTPROCESS;
+    if(bilateral<0 || bilateral>2)
+       bilateral=PAR_DEFAULT_BILATERAL;
     if(sigma[0]<0.01)
        sigma[0]=0.01;
     if(sigma[1]<1E-5)
@@ -312,14 +324,15 @@ int main (int argc, char *argv[])
   char  *out_transform, *in_transform, *out_smooth_transform;
   int   width, height, nchannels=3, nframes;
   int   nparams, online, smooth_strategy; 
-  int   boundary_condition, postprocessing, verbose;
+  int   boundary_condition, postprocessing, bilateral, verbose;
   float sigma[9];
   
   //read the parameters from the console
   int result=read_parameters(
     argc, argv, &video_in, video_out, &out_transform, &in_transform, 
     &out_smooth_transform, width, height, nframes, nparams, online,
-    smooth_strategy, sigma, boundary_condition, postprocessing, verbose
+    smooth_strategy, bilateral, sigma, boundary_condition, postprocessing, 
+    verbose
   );
   
   if(result)
@@ -328,12 +341,12 @@ int main (int argc, char *argv[])
     if(verbose)
       printf(
         " Input video: '%s'\n Output video: '%s'\n Width: %d, Height: %d "
-        " Number of frames: %d\n Transformation: %d, " 
-        " Smoothing: %d, Sigmas: %f, %f, %f, %f, %f, %f, %f, %f, %f\n"
-        " BC: %d \n Postprocess: %d\n",
+        " Number of frames: %d\n Transformation: %d, Smoothing: %d, " 
+        " bilateral: %d, Sigmas: %f, %f, %f, %f, %f, %f, %f, %f, %f\n"
+        " BC: %d Postprocess: %d\n",
         video_in, video_out, width, height, nframes, nparams,
-        smooth_strategy, sigma[0], sigma[1], sigma[2], sigma[3], sigma[4],
-        sigma[5], sigma[6], sigma[7], sigma[8], boundary_condition, 
+        smooth_strategy, bilateral, sigma[0], sigma[1], sigma[2], sigma[3], 
+        sigma[4], sigma[5], sigma[6], sigma[7], sigma[8], boundary_condition, 
         postprocessing
       );
     
@@ -369,13 +382,13 @@ int main (int argc, char *argv[])
     if(online)
       estadeo_online(
         Ig, Ic, width, height, nchannels, nframes, nparams, smooth_strategy,
-        sigma, boundary_condition, postprocessing, out_smooth_transform, 
-        verbose
+        bilateral, sigma, boundary_condition, postprocessing, 
+        out_smooth_transform, verbose
       );
     else
       estadeo(
         Ig, Ic, width, height, nchannels, nframes, nparams, smooth_strategy, 
-        sigma, boundary_condition, postprocessing, in_transform, 
+        bilateral, sigma, boundary_condition, postprocessing, in_transform, 
         out_transform, out_smooth_transform, verbose
       );
     

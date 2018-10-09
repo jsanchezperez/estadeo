@@ -3,12 +3,7 @@
 #this script is useful to execute the program from the command line
 video=$1
 outvideo=$2
-sigma_t=$3
-sigma_x=$4
-sigma_o=$5
-sigma_s=$6
-sigma_p=$7
-out_transform=$8
+params=$3
 
 mkdir tmp
 input_raw_video=tmp/video.raw
@@ -32,7 +27,7 @@ echo
 
 echo Estadeo stabilization for video $input_raw_video to $output_raw_video
 path=$(dirname "$0")
-$path/estadeo $input_raw_video $width $height $nframes -o $output_raw_video -st $sigma_t -sx $sigma_x -so $sigma_o -ss $sigma_s -sp $sigma_p -w $out_transform -v $9
+$path/estadeo $input_raw_video $width $height $nframes -o $output_raw_video $params
 echo
 
 echo Converting $output_raw_video to $outvideo
