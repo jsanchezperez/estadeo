@@ -92,7 +92,6 @@ void warp_video
   int ny,      //number of rows
   int nz,      //number of channels
   int nframes, //number of frames of the video
-  int border,  //do not fill the border
   int verbose  //verbose mode
 )
 {
@@ -115,7 +114,7 @@ void warp_video
 
     //warp the image
     bicubic_interpolation(
-      &(I[size*i]), I2, &(H[i*nparams]), nparams, nx, ny, nz, border==0
+      &(I[size*i]), I2, &(H[i*nparams]), nparams, nx, ny, nz
     );
 
     //copy warped image
@@ -163,7 +162,6 @@ void online_motion
 }
 
 
-
 /**
   *
   * Function for onlie warping the last frame of the video
@@ -176,8 +174,7 @@ void online_warp
   int nparams, //type of matrix transformation
   int nx,      //number of columns   
   int ny,      //number of rows
-  int nz,      //number of channels
-  int border   //do not fill the border
+  int nz       //number of channels
 )
 {
   int size=nx*ny*nz;
@@ -185,7 +182,7 @@ void online_warp
   float *I2=new float[nx*ny*nz];
 
   //warp the image
-  bicubic_interpolation(I, I2, H, nparams, nx, ny, nz, border==0);
+  bicubic_interpolation(I, I2, H, nparams, nx, ny, nz);
 
   //copy warped image
   for(int j=0; j<size; j++)
@@ -296,7 +293,7 @@ void estadeo(
 
   warp_video(
     Ic, Hp, nparams, nx, ny, nz, 
-    nframes, postprocessing, verbose
+    nframes, verbose
   );
 
   delete []H;
@@ -332,7 +329,7 @@ void estadeo_online(
   float *Hp=new float[nframes*nparams];
 
   //introduce identity matrix for the first transform
-  for(int i=0;i<nparams;i++) H[i]=0;
+  for(int i=0; i<nparams; i++) H[i]=0;
 
   for(int f=1; f<nframes; f++)
   {
@@ -350,7 +347,7 @@ void estadeo_online(
     );
 #endif 
     
-    //step 2. Smooth the last transformation 
+    //step 2. Smooth until the last transformation 
     gettimeofday(&t2, NULL);
     online_smoothing(
       H, Hp, nparams, f+1, bilateral, sigma, smooth_strategy, bc
@@ -359,7 +356,7 @@ void estadeo_online(
     //step 3. Warp the image
     gettimeofday(&t3, NULL);
     online_warp(
-      &Ic[size*nz*f], &Hp[nparams*f], nparams, nx, ny, nz, postprocessing
+      &Ic[size*nz*f], &Hp[nparams*f], nparams, nx, ny, nz
     );
     
     if(verbose){

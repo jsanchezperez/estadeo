@@ -19,6 +19,7 @@
 #define NO_BILATERAL  0
 #define BILATERAL_INDEPENDENT 1
 #define BILATERAL_COMPOSED 2
+#define BILATERAL_CUMULATIVE 3
 
 void compute_smooth_transforms(
   float *H,       //original matrix transformations
@@ -26,6 +27,20 @@ void compute_smooth_transforms(
   float *Ho,      //output smooth camera path
   int nparams,    //type of transformation
   int ntransforms //number of frames in the video
+);
+
+
+void global_gaussian
+(
+  float *H,          //original matrix transformations
+  float *Hij,        //centered matrix transformations
+  float *Hs,         //smooth output matrix transformations
+  int   i,           //frame number
+  int   nparams,     //type of matrix transformation
+  int   ntransforms, //number of frames of the video  
+  int   bilateral,   //strategies for the bilateral filter
+  float *sigma,      //Gaussian standard deviation
+  int   bc           //types of boundary conditions
 );
 
 

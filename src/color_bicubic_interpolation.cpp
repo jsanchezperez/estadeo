@@ -26,57 +26,56 @@ bicubic_interpolation(
   int nx,       //width of the image
   int ny,       //height of the image
   int nz,       //number of channels of the image
-  int k,        //actual channel
-  bool border_out //if true, put zeros outside the region
+  int k         //actual channel
 )
 {
-  int sx = (uu < 0) ? -1 : 1;
-  int sy = (vv < 0) ? -1 : 1;
-
-  int x, y, mx, my, dx, dy, ddx, ddy;
-  
-  x = neumann_bc ((int) uu, nx);
-  y = neumann_bc ((int) vv, ny);
-  mx = neumann_bc ((int) uu - sx, nx);
-  my = neumann_bc ((int) vv - sy, ny);
-  dx = neumann_bc ((int) uu + sx, nx);
-  dy = neumann_bc ((int) vv + sy, ny);
-  ddx = neumann_bc ((int) uu + 2 * sx, nx);
-  ddy = neumann_bc ((int) vv + 2 * sy, ny);
-
   if(uu>nx || uu<-1 || vv>ny || vv<-1) 
     return 0;
   else
   {
-      //obtain the interpolation points of the image
-      float p11 = input[(mx  + nx * my) * nz + k];
-      float p12 = input[(x   + nx * my) * nz + k];
-      float p13 = input[(dx  + nx * my) * nz + k];
-      float p14 = input[(ddx + nx * my) * nz + k];
+     int sx = (uu < 0) ? -1 : 1;
+     int sy = (vv < 0) ? -1 : 1;
 
-      float p21 = input[(mx  + nx * y) * nz + k];
-      float p22 = input[(x   + nx * y) * nz + k];
-      float p23 = input[(dx  + nx * y) * nz + k];
-      float p24 = input[(ddx + nx * y) * nz + k];
+     int x, y, mx, my, dx, dy, ddx, ddy;
+  
+     x = neumann_bc ((int) uu, nx);
+     y = neumann_bc ((int) vv, ny);
+     mx = neumann_bc ((int) uu - sx, nx);
+     my = neumann_bc ((int) vv - sy, ny);
+     dx = neumann_bc ((int) uu + sx, nx);
+     dy = neumann_bc ((int) vv + sy, ny);
+     ddx = neumann_bc ((int) uu + 2 * sx, nx);
+     ddy = neumann_bc ((int) vv + 2 * sy, ny);
 
-      float p31 = input[(mx  + nx * dy) * nz + k];
-      float p32 = input[(x   + nx * dy) * nz + k];
-      float p33 = input[(dx  + nx * dy) * nz + k];
-      float p34 = input[(ddx + nx * dy) * nz + k];
+     //obtain the interpolation points of the image
+     float p11 = input[(mx  + nx * my) * nz + k];
+     float p12 = input[(x   + nx * my) * nz + k];
+     float p13 = input[(dx  + nx * my) * nz + k];
+     float p14 = input[(ddx + nx * my) * nz + k];
 
-      float p41 = input[(mx  + nx * ddy) * nz + k];
-      float p42 = input[(x   + nx * ddy) * nz + k];
-      float p43 = input[(dx  + nx * ddy) * nz + k];
-      float p44 = input[(ddx + nx * ddy) * nz + k];
+     float p21 = input[(mx  + nx * y) * nz + k];
+     float p22 = input[(x   + nx * y) * nz + k];
+     float p23 = input[(dx  + nx * y) * nz + k];
+     float p24 = input[(ddx + nx * y) * nz + k];
+     
+     float p31 = input[(mx  + nx * dy) * nz + k];
+     float p32 = input[(x   + nx * dy) * nz + k];
+     float p33 = input[(dx  + nx * dy) * nz + k];
+     float p34 = input[(ddx + nx * dy) * nz + k];
 
-      //create array
-      float pol[4][4] = { 
-        {p11, p21, p31, p41}, {p12, p22, p32, p42},
-        {p13, p23, p33, p43}, {p14, p24, p34, p44}
-      };
+     float p41 = input[(mx  + nx * ddy) * nz + k];
+     float p42 = input[(x   + nx * ddy) * nz + k];
+     float p43 = input[(dx  + nx * ddy) * nz + k];
+     float p44 = input[(ddx + nx * ddy) * nz + k];
+     
+     //create array
+     float pol[4][4] = { 
+       {p11, p21, p31, p41}, {p12, p22, p32, p42},
+       {p13, p23, p33, p43}, {p14, p24, p34, p44}
+     };
 
-      //return interpolation
-      return bicubic_interpolation(pol, (float) uu-x, (float) vv-y);
+     //return interpolation
+     return bicubic_interpolation(pol, (float) uu-x, (float) vv-y);
   }
 }
 
@@ -94,10 +93,10 @@ void bicubic_interpolation(
   int nparams,    //number of parameters of the transform
   int nx,         //width of the image
   int ny,         //height of the image
-  int nz,         //number of channels of the image       
-  bool border_out //if true, put zeros outside the region
+  int nz          //number of channels of the image       
 )
 {
+  #pragma omp parallel for
   for (int i=0; i<ny; i++)
     for (int j=0; j<nx; j++)
     {
@@ -110,7 +109,7 @@ void bicubic_interpolation(
       //obtain the bicubic interpolation at position (uu, vv)
       for(int k=0; k<nz; k++)
         output[p*nz+k]=bicubic_interpolation(
-          input, x, y, nx, ny, nz, k, border_out
+          input, x, y, nx, ny, nz, k
         );
     }
 }

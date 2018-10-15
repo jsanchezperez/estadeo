@@ -45,7 +45,7 @@ void compute_smooth_transforms(
 
 
 //Gaussian convolution
-void global_gaussian_old
+void global_gaussian_cumulative
 (
   float *H,          //original matrix transformations
   float *Hij,        //centered matrix transformations
@@ -53,82 +53,139 @@ void global_gaussian_old
   int   i,           //frame number
   int   nparams,     //type of matrix transformation
   int   ntransforms, //number of frames of the video  
-  int   bilateral,   //strategies for the bilateral filter
+//  int   bilateral,   //strategies for the bilateral filter
   float *sigma,      //Gaussian standard deviation
   int   bc           //types of boundary conditions
 )
 {
-  if(sigma[0]>=3*ntransforms)
-    sigma[0]=ntransforms/3;
+  float sigma_0=sigma[0];
+  if(sigma_0>=3*ntransforms)
+    sigma_0=ntransforms/3;
   
-  int radius=3*sigma[0];
+  int radius=3*sigma_0;
 
   if(radius>=ntransforms) 
     radius=ntransforms-1;
   
+  //accumulators
+  float *D=new float[nparams]();
+  float *E=new float[nparams]();
+  float *A=new float[nparams]();
+  
+  for(int p=0;p<nparams;p++) Hs[p]=0;
+  
+  float sumt=0;
+  
   //Gaussian convolution in  each parameter separately
-  for(int p=0;p<nparams;p++)
+  for(int j=i;j<=i+radius;j++)
   {
-    float average=0.0;
-    float sum=0.0;
-    
-    for(int j=i-radius;j<=i+radius;j++)
+    float sum=0;
+     
+    //compute smoothing value
+    for(int p=0;p<nparams;p++)
     {
-      float value=0;
-      float Hj=0;
-      
+      D[p]=0;
+      float value;
+  
+      //test boundary conditions
+      if(j>=ntransforms)
+      {
+        switch(bc){
+          case CONSTANT_BC:
+            D[p]=Hij[(ntransforms-1)*nparams+p];
+            value=H[(ntransforms-1)*nparams+p];
+            break;
+          default: case NEUMANN_BC:
+            D[p]=Hij[(2*ntransforms-1-j)*nparams+p];
+            value=H[(2*ntransforms-1-j)*nparams+p];
+            break;
+          case DIRICHLET_BC:
+            D[p]=2*Hij[(ntransforms-1)*nparams+p]-
+                   Hij[(2*ntransforms-1-j)*nparams+p];
+            value=2*H[(ntransforms-1)*nparams+p]-
+                    H[(2*ntransforms-1-j)*nparams+p];
+            break;
+        }
+      }
+      else {
+        D[p]=Hij[j*nparams+p];
+        value=H[j*nparams+p];
+      }
+
+      //increase accumulator
+      //E[p]=D[p]*D[p]/(2*sigma[p+1]*sigma[p+1]);
+      E[p]=value*value/(2*sigma[p+1]*sigma[p+1]);
+      sum+=E[p];
+    }
+    sumt+=sum;
+    
+    //aggregate bilateral filter
+    float dt=(j-i)*(j-i)/(2*sigma[0]*sigma[0]);
+    for(int p=0;p<nparams;p++)
+    { 
+      Hs[p]+=exp(-dt-sumt)*D[p];
+      A[p] +=exp(-dt-sumt);
+    }
+  }
+  
+  sumt=0;
+  
+  //Gaussian convolution in  each parameter separately
+  for(int j=i-1;j>=i-radius;j--)
+  {
+    float sum=0;
+     
+    //compute smoothing value
+    for(int p=0;p<nparams;p++)
+    {
+      D[p]=0;
+      float value;
+  
       //test boundary conditions
       if(j<0)
       {
         switch(bc){
           case CONSTANT_BC:
-            value=Hij[p];
-            Hj=H[p];
+            D[p]=Hij[p];
+            value=H[p];
             break;
-          case NEUMANN_BC:
-            value=Hij[-j*nparams+p];
-            Hj=H[-j*nparams+p];
+          default: case NEUMANN_BC:
+            D[p]=Hij[-j*nparams+p];
+            value=H[-j*nparams+p];
             break;
           case DIRICHLET_BC:
-            value=2*Hij[p]-Hij[-j*nparams+p];
-            Hj=2*H[p]-H[-j*nparams+p];
+            D[p]=2*Hij[p]-Hij[-j*nparams+p];
+            value=H[p]-H[-j*nparams+p];
             break;
         }
       }
-      else if(j>=ntransforms)
-      {
-        switch(bc){
-          case CONSTANT_BC:
-            value=Hij[(ntransforms-1)*nparams+p];
-            Hj=H[(ntransforms-1)*nparams+p];
-            break;
-          case NEUMANN_BC:
-            value=Hij[(2*ntransforms-1-j)*nparams+p];
-            Hj=H[(2*ntransforms-1-j)*nparams+p];
-            break;
-          case DIRICHLET_BC:
-            value=2*Hij[(ntransforms-1)*nparams+p]-
-                    Hij[(2*ntransforms-1-j)*nparams+p];
-            Hj=2*H[(ntransforms-1)*nparams+p]-
-                 H[(2*ntransforms-1-j)*nparams+p];
-            break;
-        }
+      else {
+        D[p]=Hij[j*nparams+p];
+        value=H[j*nparams+p];
       }
-      else{
-        value=Hij[j*nparams+p];
-        Hj=H[j*nparams+p];
-      }
-      
+
       //increase accumulator
-      float dH=value; //(H[i*nparams+p]-Hj);
-      float norm=(j-i)*(j-i)/(2*sigma[0]*sigma[0])+
-                  dH*dH/(2*sigma[p+1]*sigma[p+1]);
-      float gauss=exp(-norm);
-      average+=gauss*value;
-      sum+=gauss;
+      E[p]=value*value/(2*sigma[p+1]*sigma[p+1]);
+      sum+=E[p];
     }
-    Hs[p]=(float) (average/sum);
+    sumt+=sum;
+    
+    //aggregate bilateral filter
+    float dt=(j-i)*(j-i)/(2*sigma[0]*sigma[0]);
+    for(int p=0;p<nparams;p++)
+    { 
+      Hs[p]+=exp(-dt-sumt)*D[p];
+      A[p] +=exp(-dt-sumt);
+    }
   }
+
+  //computing smoothing transforms
+  for(int p=0;p<nparams;p++)
+    Hs[p]=Hs[p]/A[p];
+    
+  delete []A;
+  delete []E;
+  delete []D;
 }
 
 
@@ -146,10 +203,19 @@ void global_gaussian
   int   bc           //types of boundary conditions
 )
 {
-  if(sigma[0]>=3*ntransforms)
-    sigma[0]=ntransforms/3;
+  if(bilateral==BILATERAL_CUMULATIVE)
+  {
+    global_gaussian_cumulative(
+      H, Hij, Hs, i, nparams, ntransforms, sigma, bc
+    );
+    return;
+  }
+   
+  float sigma_0=sigma[0];
+  if(sigma_0>=3*ntransforms)
+    sigma_0=ntransforms/3;
   
-  int radius=3*sigma[0];
+  int radius=3*sigma_0;
 
   if(radius>=ntransforms) 
     radius=ntransforms-1;
@@ -164,7 +230,6 @@ void global_gaussian
   //Gaussian convolution in  each parameter separately
   for(int j=i-radius;j<=i+radius;j++)
   {
-    float dt=(j-i)*(j-i)/(2*sigma[0]*sigma[0]);
     float sum=0;
      
     //compute smoothing value
@@ -211,19 +276,20 @@ void global_gaussian
     }
     
     //aggregate bilateral filter
+    float dt=(j-i)*(j-i)/(2*sigma[0]*sigma[0]);
     for(int p=0;p<nparams;p++)
     { 
       if(bilateral==BILATERAL_COMPOSED){
         Hs[p]+=exp(-dt-sum)*D[p];
-        A[p] +=(dt+sum);
+        A[p] +=exp(-dt-sum);
       }
       else if(bilateral==BILATERAL_INDEPENDENT){
         Hs[p]+=exp(-dt-E[p])*D[p];
-        A[p] +=(dt+E[p]);
+        A[p] +=exp(-dt-E[p]);
       }
       else{
-        Hs[p]+=D[p];
-        A[p] +=dt;
+        Hs[p]+=exp(-dt)*D[p];
+        A[p] +=exp(-dt);
       }
     }
   }
@@ -231,6 +297,10 @@ void global_gaussian
   //computing smoothing transforms
   for(int p=0;p<nparams;p++)
     Hs[p]=Hs[p]/A[p];
+    
+  delete []A;
+  delete []E;
+  delete []D;
 }
 
 

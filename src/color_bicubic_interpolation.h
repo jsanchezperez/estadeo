@@ -23,11 +23,10 @@ bicubic_interpolation(
   float *input,//image to be interpolated
   float uu,    //x component of the vector field
   float vv,    //y component of the vector field
-  int nx,       //width of the image
-  int ny,       //height of the image
-  int nz,       //number of channels of the image
-  int k,        //actual channel
-  bool border_out = false //if true, put zeros outside the region
+  int nx,      //width of the image
+  int ny,      //height of the image
+  int nz,      //number of channels of the image
+  int k        //actual channel
 );
 
 
@@ -40,11 +39,10 @@ void bicubic_interpolation(
   float *input,        //image to be warped
   float *output,       //warped output image with bicubic interpolation
   float *params,       //x component of the vector field
-  int nparams,          //number of parameters of the transform
-  int nx,               //width of the image
-  int ny,               //height of the image
-  int nz,               //number of channels of the image       
-  bool border_out=true  //if true, put zeros outside the region
+  int nparams,         //number of parameters of the transform
+  int nx,              //width of the image
+  int ny,              //height of the image
+  int nz               //number of channels of the image       
 );
 
 
