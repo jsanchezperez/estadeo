@@ -22,7 +22,7 @@
 void read
 (
   char *file,   //input file name
-  float **p,   //parameters to be read
+  float **p,    //parameters to be read
   int &nparams, //number of parameters
   int &nx,      //number of columns 
   int &ny       //number of rows 

@@ -384,7 +384,7 @@ void compose_transform
   {
     default: case TRANSLATION_TRANSFORM: //p=(tx, ty)
       for(int i = 0; i < nparams; i++) 
-	p[i]=p1[i]+p2[i];
+	     p[i]=p1[i]+p2[i];
       break;
     case EUCLIDEAN_TRANSFORM:  //p=(tx, ty, tita)
     {
@@ -463,14 +463,14 @@ void compose_transform
       
       if(det*det>1E-10)
       {
-	p[0]=(b*dp+c*gp+(a+1)*(ap+1))/det-1;
-	p[1]=(c*hp+b*(ep+1)+bp*(a+1))/det;
-	p[2]=(c+a*cp+b*fp+cp)/det;
-	p[3]=(d*(ap+1)+f*gp+dp*(e+1))/det;
-	p[4]=(bp*d+f*hp+(ep+1)*(e+1))/det-1;
-	p[5]=(f+cp*d+fp*(e+1))/det;
-	p[6]=(gp+g*(ap+1)+dp*h)/det;
-	p[7]=(hp+h*(ep+1)+bp*g)/det;
+	     p[0]=(b*dp+c*gp+(a+1)*(ap+1))/det-1;
+	     p[1]=(c*hp+b*(ep+1)+bp*(a+1))/det;
+        p[2]=(c+a*cp+b*fp+cp)/det;
+	     p[3]=(d*(ap+1)+f*gp+dp*(e+1))/det;
+	     p[4]=(bp*d+f*hp+(ep+1)*(e+1))/det-1;
+	     p[5]=(f+cp*d+fp*(e+1))/det;
+	     p[6]=(gp+g*(ap+1)+dp*h)/det;
+	     p[7]=(hp+h*(ep+1)+bp*g)/det;
       }
       else p[0]=p[1]=p[2]=p[3]=p[4]=p[5]=p[6]=p[7]=0;     
     }

@@ -44,7 +44,7 @@
 float rhop(
   float t2,    //squared difference of both images  
   float sigma, //robust threshold
-  int    type   //choice of the robust error function
+  int   type   //choice of the robust error function
 );
  
 
@@ -62,8 +62,7 @@ void inverse_compositional_algorithm(
   int nparams,  //number of parameters of the transform
   int nx,       //number of columns of the image
   int ny,       //number of rows of the image
-  float TOL,   //Tolerance used for the convergence in the iterations
-  int verbose=0 //enable verbose mode
+  float TOL    //Tolerance used for the convergence in the iterations
 );
 
 
@@ -82,8 +81,7 @@ void robust_inverse_compositional_algorithm(
   int ny,        //number of rows of the image
   float TOL,    //Tolerance used for the convergence in the iterations
   int    robust, //robust error function
-  float lambda, //parameter of robust error function
-  int verbose=0  //enable verbose mode
+  float lambda  //parameter of robust error function
 );
 
 /**
@@ -100,11 +98,10 @@ void pyramidal_inverse_compositional_algorithm(
     int    nyy,     //image height
     int    nzz,     //number of channels
     int    nscales, //number of scales
-    float nu,       //downsampling factor
-    float TOL,      //stopping criterion threshold
+    float  nu,      //downsampling factor
+    float  TOL,     //stopping criterion threshold
     int    robust,  //robust error function
-    float lambda,   //parameter of robust error function
-    bool   verbose=0 //switch on messages
+    float  lambda   //parameter of robust error function
 );
 
 #endif

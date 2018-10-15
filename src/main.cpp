@@ -21,7 +21,7 @@
 #define PAR_DEFAULT_SMOOTHING LOCAL_MATRIX_BASED_SMOOTHING
 #define PAR_DEFAULT_BILATERAL BILATERAL_COMPOSED
 #define PAR_DEFAULT_SIGMA_T 30.0
-#define PAR_DEFAULT_SIGMA_H 100.0
+#define PAR_DEFAULT_SIGMA_H 1000.0
 #define PAR_DEFAULT_BC NEUMANN_BC
 #define PAR_DEFAULT_POSTPROCESS NO_POSTPROCESS
 #define PAR_DEFAULT_OUTTRANSFORM "transform.mat"
@@ -258,7 +258,7 @@ int read_parameters(
        boundary_condition=PAR_DEFAULT_BC;
     if(postprocessing<0 || postprocessing>2)
        postprocessing=PAR_DEFAULT_POSTPROCESS;
-    if(bilateral<0 || bilateral>2)
+    if(bilateral<0 || bilateral>3)
        bilateral=PAR_DEFAULT_BILATERAL;
     if(sigma[0]<0.01)
        sigma[0]=0.01;
@@ -337,12 +337,11 @@ int main (int argc, char *argv[])
   
   if(result)
   {
-
     if(verbose)
       printf(
         " Input video: '%s'\n Output video: '%s'\n Width: %d, Height: %d "
         " Number of frames: %d\n Transformation: %d, Smoothing: %d, " 
-        " bilateral: %d, Sigmas: %f, %f, %f, %f, %f, %f, %f, %f, %f\n"
+        " bilateral: %d\n Sigmas: %f, %f, %f, %f, %f, %f, %f, %f, %f\n"
         " BC: %d Postprocess: %d\n",
         video_in, video_out, width, height, nframes, nparams,
         smooth_strategy, bilateral, sigma[0], sigma[1], sigma[2], sigma[3], 

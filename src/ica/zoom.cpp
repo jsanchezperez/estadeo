@@ -3,7 +3,7 @@
 // copy of this license along this program. If not, see
 // <http://www.opensource.org/licenses/bsd-license.html>.
 //
-// Copyright (C) 2015, Javier Sánchez Pérez <jsanchez@dis.ulpgc.es>
+// Copyright (C) 2015-2018, Javier Sánchez Pérez <jsanchez@dis.ulpgc.es>
 // Copyright (C) 2014, Nelson Monzón López <nmonzon@ctim.es>
 // All rights reserved.
 
@@ -13,10 +13,10 @@
 
 #include "zoom.h"
 #include "mask.h"
-#include "bicubic_interpolation.h"
 #include "transformation.h"
 
-#define ZOOM_SIGMA_ZERO 0.6
+#define ZOOM_SIGMA_ZERO 0.7
+
 
 /**
   *
@@ -29,12 +29,13 @@ void zoom_size
   int ny,       //height of the orignal image          
   int &nxx,     //width of the zoomed image
   int &nyy,     //height of the zoomed image
-  float factor //zoom factor between 0 and 1
+  float factor  //zoom factor between 0 and 1
 )
 {
   nxx = (int) ((float) nx * factor + 0.5);
   nyy = (int) ((float) ny * factor + 0.5);
 }
+
 
 /**
   *
@@ -45,34 +46,31 @@ void zoom_out
 (
   float *I,    //input image
   float *Iout, //output image
-  int nx,       //image width
-  int ny,       //image height          
+  int nx,      //image width
+  int ny,      //image height          
   float factor //zoom factor between 0 and 1
 )
 {
   int nxx, nyy, original_size =nx*ny; 
   float *Is=new float[original_size];
 
-  for (int i=0; i<original_size; i++)
-    Is[i]=I[i];
-
   //calculate the size of the zoomed image
   zoom_size(nx, ny, nxx, nyy, factor);
   
   //compute the Gaussian sigma for smoothing
-  float sigma=ZOOM_SIGMA_ZERO*sqrt(1.0/(factor*factor)-1.0);
+  //sigma=sqrt(1.4^2-0.7^2)
+  float sigma=ZOOM_SIGMA_ZERO*sqrt(1.0/(factor*factor)-1.0); //1.21
 
   //pre-smooth the image
-  gaussian(Is, nx, ny, sigma);
+  gaussian(I, Is, nx, ny, sigma);
   
-  // re-sample the image using bicubic interpolation 
+  //re-sample image
   for (int i1=0; i1<nyy; i1++)
     for (int j1=0; j1<nxx; j1++)
     {
-      float i2=(float)i1/factor;
-      float j2=(float)j1/factor;
-      Iout[i1*nxx+j1]=
-	  bicubic_interpolation(Is, j2, i2, nx, ny);  
+      int i2=(int)(i1/factor);
+      int j2=(int)(j1/factor);
+      Iout[i1*nxx+j1]=Is[i2*nx+j2];
     }   
   delete []Is;
 }
@@ -87,11 +85,11 @@ void zoom_in_parameters
 (
   float *p,    //input image
   float *pout, //output image   
-  int nparams,  //number of parameters
-  int nx,       //width of the original image
-  int ny,       //height of the original image
-  int nxx,      //width of the zoomed image
-  int nyy       //height of the zoomed image
+  int nparams, //number of parameters
+  int nx,      //width of the original image
+  int ny,      //height of the original image
+  int nxx,     //width of the zoomed image
+  int nyy      //height of the zoomed image
 )
 {
   //compute the zoom factor

@@ -72,11 +72,11 @@ bicubic_interpolation(
 **/
 float
 bicubic_interpolation(
-  float *input,//image to be interpolated
-  float uu,    //x component of the vector field
-  float vv,    //y component of the vector field
-  int nx,       //width of the image
-  int ny,       //height of the image
+  float *input,  //image to be interpolated
+  float uu,      //x component of the vector field
+  float vv,      //y component of the vector field
+  int nx,        //width of the image
+  int ny,        //height of the image
   bool border_out //if true, put zeros outside the region
 )
 {
@@ -145,6 +145,7 @@ void bicubic_interpolation(
   bool border_out  //if true, put zeros outside the region
 )
 {
+  #pragma omp parallel for
   for (unsigned int i=0; i<p.size(); i++)
   {
     float x, y;
@@ -175,6 +176,7 @@ void bicubic_interpolation(
   bool border_out  //if true, put zeros outside the region
 )
 {
+  #pragma omp parallel for
   for (int i=0; i<ny; i++)
     for (int j=0; j<nx; j++)
     {
@@ -185,7 +187,7 @@ void bicubic_interpolation(
       
       //obtain the bicubic interpolation at position (uu, vv)
       output[i*nx+j]=bicubic_interpolation(
-	input, x, y, nx, ny, border_out
+        input, x, y, nx, ny, border_out
       );
     }
 }

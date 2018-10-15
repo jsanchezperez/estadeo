@@ -16,7 +16,7 @@
   *         Lucas-kanade 20 years on: A unifying framework: Part 2. 
   *         International Journal of Computer Vision, 56(3), 221-255.
   *  
-  *  This implementation is for color images. It calculates the global 
+  *  This implementation is for graylevel images. It calculates the global 
   *  transform between two images. It uses robust error functions and a 
   *  coarse-to-fine strategy for computing large displacements
   * 
@@ -92,10 +92,11 @@ void steepest_descent_images
   vector<int> &x //corner positions
 )
 {
-//#pragma omp parallel for
+  #pragma omp parallel for
   for(unsigned int p=0; p<x.size(); p++)
     for(int n=0; n<nparams; n++)
-      DIJ[p*nparams+n]=Ix[x[p]]*J[2*p*nparams+n]+Iy[x[p]]*J[2*p*nparams+n+nparams];
+      DIJ[p*nparams+n]=Ix[x[p]]*J[2*p*nparams+n]+
+                       Iy[x[p]]*J[2*p*nparams+n+nparams];
 }
 
 /**
@@ -113,16 +114,16 @@ void hessian
 ) 
 {
   //initialize the hessian to zero
-//#pragma omp parallel for
+  #pragma omp parallel for
   for(int k=0; k<nparams*nparams; k++)
     H[k] = 0;
  
   //calculate the hessian in a neighbor window
-//#pragma omp parallel for
+  #pragma omp parallel for
   for(int k=0; k<nparams; k++)
     for(int l=0; l<nparams; l++)
       for(int i=0; i<N; i++)
-	H[k*nparams+l]+=DIJ[i*nparams+k]*DIJ[i*nparams+l];
+	     H[k*nparams+l]+=DIJ[i*nparams+k]*DIJ[i*nparams+l];
 }
 
 
@@ -141,17 +142,17 @@ void hessian
   int N        //number of values
 ) 
 {
-  //initialize the hessian to zero
-//#pragma omp parallel for
+  //initialize the hessian to zero  
+  #pragma omp parallel for
   for(int k=0; k<nparams*nparams; k++)
     H[k]=0;
 
   //calculate the hessian in a neighbor window
-//#pragma omp parallel for
+  #pragma omp parallel for
   for(int k=0; k<nparams; k++)
     for(int l=0; l<nparams; l++)
       for(int i=0; i<N; i++)
-	H[k*nparams+l]+=rho[i]*DIJ[i*nparams+k]*DIJ[i*nparams+l];
+	     H[k*nparams+l]+=rho[i]*DIJ[i*nparams+k]*DIJ[i*nparams+l];
 }
 
 
@@ -187,7 +188,7 @@ void difference_image
   float *DI  //output difference array
 ) 
 {
-//#pragma omp parallel for
+  #pragma omp parallel for
   for(unsigned int i=0; i<x.size(); i++)
     DI[i]=Iw[i]-I[x[i]];
 }
@@ -203,11 +204,11 @@ void robust_error_function
   float *DI,   //input difference array
   float *rho,  //output robust function
   float lambda,//threshold used in the robust functions
-  int    type,  //choice of robust error function
-  int N         //number of values
+  int   type,  //choice of robust error function
+  int   N      //number of values
 )
-{
-//#pragma omp parallel for
+{ 
+  #pragma omp parallel for
   for(int i=0;i<N;i++)
   {
     float norm=DI[i]*DI[i];
@@ -234,7 +235,7 @@ void independent_vector
   for(int k=0; k<nparams; k++)
     b[k]=0;
 
-//#pragma omp parallel for
+  #pragma omp parallel for
   for(int k=0; k<nparams; k++)
     for(int i=0; i<N; i++)
       b[k]+=DIJ[i*nparams+k]*DI[i];
@@ -261,7 +262,7 @@ void independent_vector
   for(int k=0; k<nparams; k++)
     b[k]=0;
 
-//#pragma omp parallel for
+  #pragma omp parallel for
   for(int k=0; k<nparams; k++)
     for(int i=0; i<N; i++)
       b[k]+=rho[i]*DIJ[i*nparams+k]*DI[i];
@@ -296,30 +297,28 @@ float parametric_solve
 void select_points(
   vector<int> &x,
   int nx,
-  int ny,
-  int verbose
+  int ny
 )
 {
- 
   if(nx>64)
   {
     int radius=5;
+    int region=5;
     int border=(float)(nx/10.);
     for(int i=border+radius;i<ny-border-radius;i+=radius*radius)
     for(int j=border+radius;j<nx-border-radius;j+=radius*radius)
     {
       //    x.push_back(i*nx+j);
-      for(int k=i-radius;k<=i+radius; k++)
-        for(int l=j-radius;l<=j+radius; l++)
+      for(int k=i-region;k<=i+region; k++)
+        for(int l=j-region;l<=j+region; l++)
           x.push_back(k*nx+l);
     } 
   }
   else
-    for(int k=0;k<ny; k++)
-        for(int l=0;l<nx; l++)
+    for(int k=8;k<ny-8; k++)
+        for(int l=8;l<nx-8; l++)
           x.push_back(k*nx+l);
 	
-  if(verbose) printf("Selecting points for matching\n");
 }
 
 
@@ -334,11 +333,10 @@ void inverse_compositional_algorithm(
   float *I1,   //first image
   float *I2,   //second image
   float *p,    //parameters of the transform (output)
-  int nparams,  //number of parameters of the transform
+  int nparams, //number of parameters of the transform
   float TOL,   //Tolerance used for the convergence in the iterations
-  int nx,        //number of columns
-  int ny,        //number of rows
-  int verbose   //enable verbose mode
+  int nx,      //number of columns
+  int ny       //number of rows
 )
 {
   float *Ix =new float[nx*ny];   //x derivate of the first image
@@ -349,7 +347,7 @@ void inverse_compositional_algorithm(
   
   //find corner points
   vector<int> x;
-  select_points(x, nx, ny, verbose);
+  select_points(x, nx, ny);
   
 
   int N=x.size();
@@ -395,13 +393,6 @@ void inverse_compositional_algorithm(
     //Update the warp x'(x;p) := x'(x;p) * x'(x;dp)^-1
     update_transform(p, dp, nparams);
 
-    if(verbose)
-    {
-      printf("|Dp|=%f: p=(",error);
-      for(int i=0;i<nparams-1;i++)
-        printf("%f ",p[i]);
-      printf("%f)\n",p[nparams-1]);
-    }
     niter++;    
   }
   while(error>TOL && niter<MAX_ITER);
@@ -428,16 +419,15 @@ void inverse_compositional_algorithm(
   * 
 **/
 void robust_inverse_compositional_algorithm(
-  float *I1,    //first image
-  float *I2,    //second image
-  float *p,     //parameters of the transform (output)
+  float *I1,     //first image
+  float *I2,     //second image
+  float *p,      //parameters of the transform (output)
   int nparams,   //number of parameters of the transform
-  float TOL,    //Tolerance used for the convergence in the iterations
+  float TOL,     //Tolerance used for the convergence in the iterations
   int    robust, //robust error function
-  float lambda, //parameter of robust error function
+  float lambda,  //parameter of robust error function
   int nx,        //number of columns
-  int ny,        //number of rows
-  int verbose    //enable verbose mode
+  int ny         //number of rows
 )
 {  
   float *Ix =new float[nx*ny];       //x derivate of the first image
@@ -448,7 +438,7 @@ void robust_inverse_compositional_algorithm(
 
   //find corner points
   vector<int> x;
-  select_points(x, nx, ny, verbose);      
+  select_points(x, nx, ny);      
 
   int N=x.size();            //number of corner points
   int size2=N*nparams;   //size of the image with transform parameters
@@ -506,13 +496,6 @@ void robust_inverse_compositional_algorithm(
     //Update the warp x'(x;p) := x'(x;p) * x'(x;dp)^-1
     update_transform(p, dp, nparams);
 
-    if(verbose) 
-    {
-      printf("|Dp|=%f: p=(",error);
-      for(int i=0;i<nparams-1;i++)
-        printf("%f ",p[i]);
-      printf("%f), lambda=%f\n",p[nparams-1],lambda_it);
-    }
     niter++;    
   }
   while(error>TOL && niter<MAX_ITER);
@@ -538,19 +521,18 @@ void robust_inverse_compositional_algorithm(
   *
 **/
 void pyramidal_inverse_compositional_algorithm(
-    float *I1,     //first image
-    float *I2,     //second image
-    float *p,      //parameters of the transform
+    float *I1,      //first image
+    float *I2,      //second image
+    float *p,       //parameters of the transform
     int    nparams, //number of parameters
     int    nxx,     //image width
     int    nyy,     //image height
     int    nzz,     //number of channels
     int    nscales, //number of scales
-    float nu,      //downsampling factor
-    float TOL,     //stopping criterion threshold
+    float  nu,      //downsampling factor
+    float  TOL,     //stopping criterion threshold
     int    robust,  //robust error function
-    float lambda,  //parameter of robust error function
-    bool   verbose  //switch on messages
+    float  lambda   //parameter of robust error function
 )
 {
     int size=nxx*nyy*nzz;
@@ -566,7 +548,7 @@ void pyramidal_inverse_compositional_algorithm(
     I2s[0]=new float[size];
 
     //copy the input images
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for(int i=0;i<size;i++)
     {
       I1s[0][i]=I1[i];
@@ -603,26 +585,16 @@ void pyramidal_inverse_compositional_algorithm(
     //pyramidal approach for computing the transformation
     for(int s=nscales-1; s>=0; s--)
     {
-      if(verbose) printf("Scale: %d (%d,%d)\n",s,nx[s],ny[s]);
-
       //incremental refinement for this scale
       if(robust==QUADRATIC)
-      {
-        if(verbose) printf("(L2 norm)\n");
-
         inverse_compositional_algorithm(
-          I1s[s], I2s[s], ps[s], nparams, TOL, nx[s], ny[s], verbose
+          I1s[s], I2s[s], ps[s], nparams, TOL, nx[s], ny[s]
         );
-      }
       else
-      {
-        if(verbose) printf("(Robust error function %d)\n",robust);
-
         robust_inverse_compositional_algorithm(
           I1s[s], I2s[s], ps[s], nparams, TOL, 
-          robust, lambda, nx[s], ny[s], verbose
+          robust, lambda, nx[s], ny[s]
         );
-      }
 
       //if it is not the finer scale, then upsample the parameters
       if(s) 

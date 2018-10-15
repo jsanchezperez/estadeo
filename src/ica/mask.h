@@ -47,12 +47,12 @@ void gradient_points(
  */
 void
 gaussian (
-  float *I,        //input/output image
-  int xdim,         //image width
-  int ydim,         //image height
-  float sigma,     //Gaussian sigma
-  int bc = 1,       //boundary condition
-  int precision = 5 //defines the size of the window
+  float *I,     //input image
+  float *Is,    //output image
+  int xdim,     //image width
+  int ydim,     //image height
+  float sigma,  //Gaussian sigma
+  int precision = 4 //defines the size of the window
 );
 
 #endif
