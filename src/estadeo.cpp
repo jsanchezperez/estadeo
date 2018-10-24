@@ -157,16 +157,14 @@ void estadeo_online(
   }
   
   //save the stabilizing transformations 
-  if(out_stransform!=NULL)
+  if(Hout!=NULL)
   {
     if(verbose)
-      printf(
-        "\n  Write smoothed transformations to file '%s'\n", out_stransform
-      );
+      printf("\n  Write smoothed transformations to '%s'\n", Hout);
 
     float *Ho=new float[nframes*nparams];
     compute_smooth_transforms(H, Hp, Ho, nparams, nframes);
-    save_transforms(out_stransform, Ho, nparams, nframes, nx, ny);
+    save_transforms(Hout, Ho, nparams, nframes, nx, ny);
     delete []Ho;
   }
 

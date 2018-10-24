@@ -15,298 +15,58 @@
 #include <stdio.h>
 #include <math.h>
 
-/**
-  *
-  * Function to compute the motion of the smooth camera path
-  *
-**/
-void compute_smooth_transforms(
-  float *H,       //original matrix transformations
-  float *Hp,      //stabilizing transformations
-  float *Hs,      //output smooth camera path
-  int nparams,    //type of transformation
-  int ntransforms //number of frames in the video
-)
-{
-  float *H_1=new float[nparams];
-  float *Htmp=new float[nparams];
-
-  for(int i=0;i<nparams;i++) Hs[i]=0;
-  for(int i=1;i<ntransforms;i++)
-  {
-      inverse_transform(&Hp[i*nparams], H_1, nparams);
-      compose_transform(&H[i*nparams], &Hp[(i-1)*nparams], Htmp, nparams);
-      compose_transform(H_1, Htmp, &Hs[i*nparams],nparams);
-  }
-
-  delete []H_1;
-  delete []Htmp;
-}
-
 
 //Gaussian convolution
-void global_gaussian_cumulative
+void online_global_gaussian
 (
   float *H,          //original matrix transformations
-  float *Hij,        //centered matrix transformations
   float *Hs,         //smooth output matrix transformations
   int   i,           //frame number
   int   nparams,     //type of matrix transformation
   int   ntransforms, //number of frames of the video  
-//  int   bilateral,   //strategies for the bilateral filter
-  float *sigma,      //Gaussian standard deviation
-  int   bc           //types of boundary conditions
+  float sigma        //Gaussian standard deviation
+
 )
 {
-  float sigma_0=sigma[0];
-  if(sigma_0>=3*ntransforms)
-    sigma_0=ntransforms/3;
+  if(sigma>=3*ntransforms)
+    sigma=ntransforms/3;
   
-  int radius=3*sigma_0;
+  int radius=3*sigma;
 
   if(radius>=ntransforms) 
     radius=ntransforms-1;
   
-  //accumulators
-  float *D=new float[nparams]();
-  float *E=new float[nparams]();
-  float *A=new float[nparams]();
-  
-  for(int p=0;p<nparams;p++) Hs[p]=0;
-  
-  float sumt=0;
-  
   //Gaussian convolution in  each parameter separately
-  for(int j=i;j<=i+radius;j++)
-  {
-    float sum=0;
-     
-    //compute smoothing value
-    for(int p=0;p<nparams;p++)
-    {
-      D[p]=0;
-      float value;
-  
-      //test boundary conditions
-      if(j>=ntransforms)
-      {
-        switch(bc){
-          case CONSTANT_BC:
-            D[p]=Hij[(ntransforms-1)*nparams+p];
-            value=H[(ntransforms-1)*nparams+p];
-            break;
-          default: case NEUMANN_BC:
-            D[p]=Hij[(2*ntransforms-1-j)*nparams+p];
-            value=H[(2*ntransforms-1-j)*nparams+p];
-            break;
-          case DIRICHLET_BC:
-            D[p]=2*Hij[(ntransforms-1)*nparams+p]-
-                   Hij[(2*ntransforms-1-j)*nparams+p];
-            value=2*H[(ntransforms-1)*nparams+p]-
-                    H[(2*ntransforms-1-j)*nparams+p];
-            break;
-        }
-      }
-      else {
-        D[p]=Hij[j*nparams+p];
-        value=H[j*nparams+p];
-      }
-
-      //increase accumulator
-      //E[p]=D[p]*D[p]/(2*sigma[p+1]*sigma[p+1]);
-      E[p]=value*value/(2*sigma[p+1]*sigma[p+1]);
-      sum+=E[p];
-    }
-    sumt+=sum;
-    
-    //aggregate bilateral filter
-    float dt=(j-i)*(j-i)/(2*sigma[0]*sigma[0]);
-    for(int p=0;p<nparams;p++)
-    { 
-      Hs[p]+=exp(-dt-sumt)*D[p];
-      A[p] +=exp(-dt-sumt);
-    }
-  }
-  
-  sumt=0;
-  
-  //Gaussian convolution in  each parameter separately
-  for(int j=i-1;j>=i-radius;j--)
-  {
-    float sum=0;
-     
-    //compute smoothing value
-    for(int p=0;p<nparams;p++)
-    {
-      D[p]=0;
-      float value;
-  
-      //test boundary conditions
-      if(j<0)
-      {
-        switch(bc){
-          case CONSTANT_BC:
-            D[p]=Hij[p];
-            value=H[p];
-            break;
-          default: case NEUMANN_BC:
-            D[p]=Hij[-j*nparams+p];
-            value=H[-j*nparams+p];
-            break;
-          case DIRICHLET_BC:
-            D[p]=2*Hij[p]-Hij[-j*nparams+p];
-            value=H[p]-H[-j*nparams+p];
-            break;
-        }
-      }
-      else {
-        D[p]=Hij[j*nparams+p];
-        value=H[j*nparams+p];
-      }
-
-      //increase accumulator
-      E[p]=value*value/(2*sigma[p+1]*sigma[p+1]);
-      sum+=E[p];
-    }
-    sumt+=sum;
-    
-    //aggregate bilateral filter
-    float dt=(j-i)*(j-i)/(2*sigma[0]*sigma[0]);
-    for(int p=0;p<nparams;p++)
-    { 
-      Hs[p]+=exp(-dt-sumt)*D[p];
-      A[p] +=exp(-dt-sumt);
-    }
-  }
-
-  //computing smoothing transforms
   for(int p=0;p<nparams;p++)
-    Hs[p]=Hs[p]/A[p];
+  {
+    double average=0.0;
+    double sum=0.0;
     
-  delete []A;
-  delete []E;
-  delete []D;
-}
-
-
-//Gaussian convolution
-void global_gaussian
-(
-  float *H,          //original matrix transformations
-  float *Hij,        //centered matrix transformations
-  float *Hs,         //smooth output matrix transformations
-  int   i,           //frame number
-  int   nparams,     //type of matrix transformation
-  int   ntransforms, //number of frames of the video  
-  int   bilateral,   //strategies for the bilateral filter
-  float *sigma,      //Gaussian standard deviation
-  int   bc           //types of boundary conditions
-)
-{
-  if(bilateral==BILATERAL_CUMULATIVE)
-  {
-    global_gaussian_cumulative(
-      H, Hij, Hs, i, nparams, ntransforms, sigma, bc
-    );
-    return;
-  }
-   
-  float sigma_0=sigma[0];
-  if(sigma_0>=3*ntransforms)
-    sigma_0=ntransforms/3;
-  
-  int radius=3*sigma_0;
-
-  if(radius>=ntransforms) 
-    radius=ntransforms-1;
-  
-  //accumulators
-  float *D=new float[nparams]();
-  float *E=new float[nparams]();
-  float *A=new float[nparams]();
-  
-  for(int p=0;p<nparams;p++) Hs[p]=0;
-  
-  //Gaussian convolution in  each parameter separately
-  for(int j=i-radius;j<=i+radius;j++)
-  {
-    float sum=0;
-     
-    //compute smoothing value
-    for(int p=0;p<nparams;p++)
+    for(int j=i-radius;j<=i+radius;j++)
     {
-      D[p]=0;
-  
-      //test boundary conditions
+      double value=0;
+      
+      //Neumann boundary conditions
       if(j<0)
-      {
-        switch(bc){
-          case CONSTANT_BC:
-            D[p]=Hij[p];
-            break;
-          case NEUMANN_BC:
-            D[p]=Hij[-j*nparams+p];
-            break;
-          case DIRICHLET_BC:
-            D[p]=2*Hij[p]-Hij[-j*nparams+p];
-            break;
-        }
-      }
+        value=H[-j*nparams+p];      
       else if(j>=ntransforms)
-      {
-        switch(bc){
-          case CONSTANT_BC:
-            D[p]=Hij[(ntransforms-1)*nparams+p];
-            break;
-          case NEUMANN_BC:
-            D[p]=Hij[(2*ntransforms-1-j)*nparams+p];
-            break;
-          case DIRICHLET_BC:
-            D[p]=2*Hij[(ntransforms-1)*nparams+p]-
-                   Hij[(2*ntransforms-1-j)*nparams+p];
-            break;
-        }
-      }
-      else
-        D[p]=Hij[j*nparams+p];
-
+        value=H[(2*ntransforms-1-j)*nparams+p];
+      else 
+        value=H[j*nparams+p];
+      
       //increase accumulator
-      E[p]=D[p]*D[p]/(2*sigma[p+1]*sigma[p+1]);
-      sum+=E[p];
+      double norm=0.5*(j-i)*(j-i)/(sigma*sigma);
+      double gauss=exp(-norm);
+      average+=gauss*value;
+      sum+=gauss;
     }
-    
-    //aggregate bilateral filter
-    float dt=(j-i)*(j-i)/(2*sigma[0]*sigma[0]);
-    for(int p=0;p<nparams;p++)
-    { 
-      if(bilateral==BILATERAL_COMPOSED){
-        Hs[p]+=exp(-dt-sum)*D[p];
-        A[p] +=exp(-dt-sum);
-      }
-      else if(bilateral==BILATERAL_INDEPENDENT){
-        Hs[p]+=exp(-dt-E[p])*D[p];
-        A[p] +=exp(-dt-E[p]);
-      }
-      else{
-        Hs[p]+=exp(-dt)*D[p];
-        A[p] +=exp(-dt);
-      }
-    }
+    Hs[p]=(float) (average/sum);
   }
-
-  //computing smoothing transforms
-  for(int p=0;p<nparams;p++)
-    Hs[p]=Hs[p]/A[p];
-    
-  delete []A;
-  delete []E;
-  delete []D;
 }
-
 
 
 //Gaussian convolution for local methods
-void local_gaussian
+void online_local_gaussian
 (
   float *H,          //original matrix transformations
   float *Hs,         //smooth output matrix transformations
@@ -314,7 +74,6 @@ void local_gaussian
   int   nparams,     //type of matrix transformation
   int   ntransforms, //number of frames of the video  
   float sigma,       //Gaussian standard deviation
-  int   bc,          //types of boundary conditions
   float *H_1         //inverse transforms
 )
 {
@@ -338,34 +97,11 @@ void local_gaussian
       
       //test boundary conditions
       if(j<0)
-      {
-        switch(bc){
-          case CONSTANT_BC:
-            value=0;
-            break;
-          case NEUMANN_BC:
-            value=H_1[(-j)*nparams+p];
-            break;
-          case DIRICHLET_BC:
-            value=H[(-j)*nparams+p];
-            break;
-        }
-      }
+        value=H_1[(-j)*nparams+p];
       else if(j>=ntransforms) 
-      {
-        switch(bc){
-          case CONSTANT_BC:
-            value=0;
-            break;
-          case NEUMANN_BC:
-            value=H_1[(2*ntransforms-1-j)*nparams+p];
-            break;
-          case DIRICHLET_BC:
-            value=H[(2*ntransforms-1-j)*nparams+p];
-            break;
-        }
-      }
-      else value=H[j*nparams+p];
+        value=H_1[(2*ntransforms-1-j)*nparams+p];
+      else 
+        value=H[j*nparams+p];
       
       //increase accumulator
       float norm=0.5*(j-i)*(j-i)/(sigma*sigma);
@@ -378,27 +114,25 @@ void local_gaussian
 }
 
 
-
 //local matrix based smoothing approach
-void local_matrix_based_smoothing
+void online_local_matrix_based_smoothing
 (
   float *H,          //original matrix transformations
   float *Hp,         //smooth output matrix transformations
   int   nparams,     //type of matrix transformation
   int   ntransforms, //number of frames of the video
-  int   bilateral,   //strategies for the bilateral filter
-  float *sigma,      //Gaussian standard deviation
-  int   bc           //types of boundary conditions
+  float sigma        //Gaussian standard deviation
 )
 {
   float *H_1=new float[ntransforms*nparams];
   float *Hc=new float[ntransforms*nparams];
   float *Hs=new float[ntransforms*nparams];
   
-  if(sigma[0]>=3*ntransforms)
-    sigma[0]=ntransforms/3;
+  float sigma_0=sigma[0];
+  if(sigma_0>=3*ntransforms)
+    sigma_0=ntransforms/3;
   
-  int radius=3*sigma[0];
+  int radius=3*sigma_0;
 
   if(radius>=ntransforms) 
     radius=ntransforms-1;
@@ -407,7 +141,8 @@ void local_matrix_based_smoothing
   for(int i=0;i<ntransforms;i++) 
     inverse_transform(&(H[i*nparams]), &(H_1[i*nparams]), nparams);
 
-  for(int i=0;i<ntransforms;i++)
+  //recompute the stabilization for past frames
+  for(int i=ntransforms-radius;i<ntransforms;i++)
   {
     int t1=(i-radius>0)?i-radius:0;
     int t2=((i+radius)<ntransforms)?(i+radius):ntransforms-1;
@@ -434,14 +169,13 @@ void local_matrix_based_smoothing
          Hc[(i+1)*nparams+j]=H[(i+1)*nparams+j];
       for(int j=i+2;j<=t2;j++)
          compose_transform(
-            &(H[j*nparams]), &(Hc[(j-1)*nparams]), 
-            &(Hc[j*nparams]), nparams
+            &(H[j*nparams]), &(Hc[(j-1)*nparams]), &(Hc[j*nparams]), nparams
          );
     }
 
     //smooth transforms with a discrete Gaussian kernel
     global_gaussian(
-      H, Hc, &(Hs[i*nparams]), i, nparams, ntransforms, bilateral, sigma, bc
+      H, Hc, &(Hs[i*nparams]), i, nparams, ntransforms, sigma
     );
 
     //compute inverse transformations 
@@ -454,13 +188,14 @@ void local_matrix_based_smoothing
 }
 
 
+
+
 //Gaussian convolution with a set of points
-float point_gaussian(
+float online_point_gaussian(
   float *x,          //set of points
   int   i,           //frame number
   int   ntransforms, //number of transforms
-  float sigma,       //Gaussian standard deviation
-  int   bc           //type of boundary condition
+  float sigma        //Gaussian standard deviation
 )
 {
   float average=0.0;
@@ -481,34 +216,11 @@ float point_gaussian(
     
     //test boundary conditions
     if(j<0)
-    {
-      switch(bc){
-        case CONSTANT_BC:
-          value=x[0];
-          break;
-        case NEUMANN_BC:
-          value=x[-j];
-          break;
-        case DIRICHLET_BC:
-          value=2*x[0]-x[-j];
-          break;
-      }
-    }
+      value=x[-j];
     else if(j>=ntransforms) 
-    {
-      switch(bc){
-        case CONSTANT_BC:
-          value=x[ntransforms-1];
-          break;
-        case NEUMANN_BC:
-          value=x[2*ntransforms-1-j];
-          break;
-        case DIRICHLET_BC:
-          value=2*x[ntransforms-1]-x[2*ntransforms-1-j];
-          break;
-      }
-    }
-    else value=x[j];
+      value=x[2*ntransforms-1-j];
+    else 
+      value=x[j];
 
     float dx=j-i;
     float norm=0.5*dx*dx/(sigma*sigma);
@@ -521,14 +233,13 @@ float point_gaussian(
 
 
 //Matrix DCT Gaussian convolution
-void matrix_gaussian_dct
+void online_matrix_gaussian_dct
 (
   float *H,      //original matrix transformations
   float *Hs,     //smooth output matrix transformations
   int   nparams, //type of matrix transformation
   int   N,       //number of frames of the video  
-  float sigma,   //Gaussian standard deviation
-  int   bc       //type of boundary condition
+  float sigma    //Gaussian standard deviation
 )
 {  
   num *dest=new num[3*N-2];
@@ -542,27 +253,11 @@ void matrix_gaussian_dct
     for(int i=N-1; i<2*N-1; i++)
       src[i]=H[(i-N+1)*nparams+p];
     
-    //boundary conditions
-    switch(bc){
-      case CONSTANT_BC:
-        for(int i=0; i<N-1; i++)
-          src[i]=H[p];
-        for(int i=2*N-1; i<3*N-2; i++)
-          src[i]=H[(N-1)*nparams+p];
-        break;
-      case NEUMANN_BC: 
-        for(int i=0; i<N-1; i++)
-          src[i]=H[(N-i-2)*nparams+p];
-        for(int i=2*N-1; i<3*N-2; i++)
-          src[i]=H[(3*N-i-2)*nparams+p];
-        break;
-      case DIRICHLET_BC: 
-        for(int i=0; i<N-1; i++)
-          src[i]=2*H[p]-H[(N-i-2)*nparams+p];
-        for(int i=2*N-1; i<3*N-2; i++)
-          src[i]=2*H[(N-1)*nparams+p]-H[(3*N-i-2)*nparams+p];
-        break;
-    }
+    //Neumann boundary conditions
+    for(int i=0; i<N-1; i++)
+      src[i]=H[(N-i-2)*nparams+p];
+    for(int i=2*N-1; i<3*N-2; i++)
+      src[i]=H[(3*N-i-2)*nparams+p];
 
     //apply DCT Gaussian convolution
     if (!(dct_precomp(&c, dest, src, 3*N-2, 1, sigma)))
@@ -583,14 +278,13 @@ void matrix_gaussian_dct
 
 
 //local linear matrix-based smoothing
-void local_linear_matrix_based_smoothing
+void online_local_linear_matrix_based_smoothing
 (
   float *H,          //original matrix transformations
   float *Hp,         //smooth output matrix transformations
   int   nparams,     //type of matrix transformation
   int   ntransforms, //number of frames of the video  
-  float *sigma,      //Gaussian standard deviations
-  int   bc           //type of boundary condition
+  float sigma        //Gaussian standard deviations
 )
 {
   float *HH=new float[ntransforms*9];
@@ -618,7 +312,7 @@ void local_linear_matrix_based_smoothing
   }
 
   //convolve the virtual trajectories with a Gaussian kernel
-  matrix_gaussian_dct(Hi, Hs, 9, ntransforms, sigma[0], bc);
+  online_matrix_gaussian_dct(Hi, Hs, 9, ntransforms, sigma);
 
   for(int i=0;i<ntransforms;i++) 
   {
@@ -644,7 +338,7 @@ void local_linear_matrix_based_smoothing
 
 
 //Point DCT Gaussian convolution
-void point_gaussian_dct
+void online_point_gaussian_dct
 (
   float *x,    //input set of points
   float *xs,   //output set of smoothed points 
@@ -701,14 +395,13 @@ void point_gaussian_dct
 
 
 //local linear point based smoothing approach
-void local_linear_point_based_smoothing
+void online_local_linear_point_based_smoothing
 (
   float *H,          //original matrix transformations
   float *Hp,         //smooth output matrix transformations
   int   nparams,     //type of matrix transformation
   int   ntransforms, //number of frames of the video  
-  float *sigma,      //Gaussian standard deviations
-  int   bc           //type of boundary condition
+  float sigma        //Gaussian standard deviations
 )
 { 
   float *x0=new  float[ntransforms];
@@ -765,14 +458,14 @@ void local_linear_point_based_smoothing
   }
   
   //DCT Gaussian convolution of each virtual trajectory
-  point_gaussian_dct(x0, x0s, ntransforms, sigma[0], bc);
-  point_gaussian_dct(x1, x1s, ntransforms, sigma[0], bc);
-  point_gaussian_dct(x2, x2s, ntransforms, sigma[0], bc);
-  point_gaussian_dct(x3, x3s, ntransforms, sigma[0], bc);
-  point_gaussian_dct(y0, y0s, ntransforms, sigma[0], bc);
-  point_gaussian_dct(y1, y1s, ntransforms, sigma[0], bc);
-  point_gaussian_dct(y2, y2s, ntransforms, sigma[0], bc);
-  point_gaussian_dct(y3, y3s, ntransforms, sigma[0], bc);
+  online_point_gaussian_dct(x0, x0s, ntransforms, sigma);
+  online_point_gaussian_dct(x1, x1s, ntransforms, sigma);
+  online_point_gaussian_dct(x2, x2s, ntransforms, sigma);
+  online_point_gaussian_dct(x3, x3s, ntransforms, sigma);
+  online_point_gaussian_dct(y0, y0s, ntransforms, sigma);
+  online_point_gaussian_dct(y1, y1s, ntransforms, sigma);
+  online_point_gaussian_dct(y2, y2s, ntransforms, sigma);
+  online_point_gaussian_dct(y3, y3s, ntransforms, sigma);
   
   for(int i=0;i<ntransforms;i++) 
   {
@@ -828,40 +521,33 @@ void local_linear_point_based_smoothing
   * 
   *
 **/
-void motion_smoothing
+void online_smoothing
 (
   float *H,          //original matrix transformations
   float *Hp,         //smooth output matrix transformations
   int   nparams,     //type of matrix transformation
   int   ntransforms, //number of frames of the video
-  int   bilateral,   //strategies for the bilateral filter
-  float *sigma,      //Gaussian standard deviations
-  int   type,        //motion smoothing strategy
-  int   bc,          //type of boundary condition
-  int   verbose      //verbose mode
+  float sigma,       //Gaussian standard deviations
+  int   type         //motion smoothing strategy
 )
-{  
+{
   switch(type) 
   {
     default: case LOCAL_MATRIX_BASED_SMOOTHING:
-      if(verbose) printf("  Local matrix-based smoothing approach:\n");
-      local_matrix_based_smoothing(
+      online_local_matrix_based_smoothing(
         H, Hp, nparams, ntransforms, bilateral, sigma, bc
       );
       break;
     case LOCAL_LINEAR_MATRIX_BASED_SMOOTHING:
-      if(verbose) printf("  Local linear matrix-based smoothing approach:\n");
-      local_linear_matrix_based_smoothing(
+      online_local_linear_matrix_based_smoothing(
         H, Hp, nparams, ntransforms, sigma, bc
       );
       break;
     case LOCAL_LINEAR_POINT_BASED_SMOOTHING:
-      if(verbose) printf("  Local linear point-based smoothing approach:\n");
-      local_linear_point_based_smoothing(
+      online_local_linear_point_based_smoothing(
         H, Hp, nparams, ntransforms, sigma, bc
       );
       break;
   }
 }
-
 

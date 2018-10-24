@@ -30,44 +30,14 @@ void compute_smooth_transforms(
 );
 
 
-void global_gaussian
-(
-  float *H,          //original matrix transformations
-  float *Hij,        //centered matrix transformations
-  float *Hs,         //smooth output matrix transformations
-  int   i,           //frame number
-  int   nparams,     //type of matrix transformation
-  int   ntransforms, //number of frames of the video  
-  int   bilateral,   //strategies for the bilateral filter
-  float *sigma,      //Gaussian standard deviation
-  int   bc           //types of boundary conditions
-);
-
-
-void motion_smoothing
-(
-  float *H,          //original matrix transformations
-  float *Hp,         //smooth output matrix transformations
-  int   nparams,     //type of matrix transformation
-  int   ntransforms, //number of frames of the video
-  int   bilateral,   //strategies for the bilateral filter
-  float *sigma,      //Gaussian standard deviations
-  int   type,        //motion smoothing strategy
-  int   bc,          //type of boundary condition
-  int   verbose      //verbose mode
-);
-
-
 void online_smoothing
 (
   float *H,          //original matrix transformations
   float *Hp,         //smooth output matrix transformations
   int   nparams,     //type of matrix transformation
   int   ntransforms, //number of frames of the video
-  int   bilateral,   //strategies for the bilateral filter
-  float *sigma,      //Gaussian standard deviations
-  int   type,        //motion smoothing strategy
-  int   bc           //type of boundary condition
+  float sigma,       //Gaussian standard deviations
+  int   type         //motion smoothing strategy
 );
 
 #endif

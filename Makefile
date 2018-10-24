@@ -5,7 +5,7 @@ INCLUDE=-I./src/ica -I./src
 #object files
 OBJ_ICA= bicubic_interpolation.o file.o inverse_compositional_algorithm.o mask.o matrix.o transformation.o zoom.o
 
-OBJ_ESTADEO= color_bicubic_interpolation.o crop_and_zoom.o estadeo.o gaussian_conv_dct.o main.o motion_smoothing.o online_motion_smoothing.o sutherland_hodgman.o utils.o
+OBJ_ESTADEO= color_bicubic_interpolation.o estadeo.o gaussian_conv_dct.o main.o motion_smoothing.o utils.o
 
 OBJ= $(OBJ_ICA) $(OBJ_ESTADEO)
 
