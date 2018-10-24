@@ -10,9 +10,16 @@
 
 #include <math.h>
 
+using namespace std;
+
 
 //Multiplication of a square matrix and a vector
-void Axb(float *A, float *b, float *p, int n)
+void Axb(
+  float *A,
+  float *b, 
+  float *p, 
+  int   n
+)
 {
   for(int i=0; i<n; i++)
   {
@@ -30,70 +37,70 @@ void Axb(float *A, float *b, float *p, int n)
 int inverse(
   float *A,   //input matrix
   float *A_1, //output matrix
-  int N        //matrix dimension
+  int   N     //matrix dimension
 ) 
 {
-  float *PASO=new float[2*N*N];
+  double *T=new double[2*N*N];
 
-  float max,paso,mul;
-  int i,j,i_max,k;
+  double max, mul;
+  int i, j, i_max, k;
 
   for(i=0;i<N;i++){
     for(j=0;j<N;j++){
-      PASO[i*2*N+j]=A[i*N+j];
-      PASO[i*2*N+j+N]=0.;
+      T[i*2*N+j]=A[i*N+j];
+      T[i*2*N+j+N]=0.;
     }
   }    
   for(i=0;i<N;i++)
-      PASO[i*2*N+i+N]=1.;      
+      T[i*2*N+i+N]=1.;      
       
   for(i=0;i<N;i++){
-    max=fabs(PASO[i*2*N+i]);
+    max=fabs(T[i*2*N+i]);
     i_max=i;
     for(j=i;j<N;j++){
-       if(fabs(PASO[j*2*N+i])>max){
-         i_max=j; max=fabs(PASO[j*2*N+i]);
+       if(fabs(T[j*2*N+i])>max){
+         i_max=j; max=fabs(T[j*2*N+i]);
        } 
     }
 
-    if(max<10e-30){ 
-      delete []PASO;
+    if(max<1e-30){ 
+      delete []T;
       return -1;
     }
     if(i_max>i){
       for(k=0;k<2*N;k++){
-        paso=PASO[i*2*N+k];
-        PASO[i*2*N+k]=PASO[i_max*2*N+k];
-        PASO[i_max*2*N+k]=paso;
+        double tmp=T[i*2*N+k];
+        T[i*2*N+k]=T[i_max*2*N+k];
+        T[i_max*2*N+k]=tmp;
       }
     } 
 
     for(j=i+1;j<N;j++){
-      mul=-PASO[j*2*N+i]/PASO[i*2*N+i];
-      for(k=i;k<2*N;k++) PASO[j*2*N+k]+=mul*PASO[i*2*N+k];                
+      mul=-T[j*2*N+i]/T[i*2*N+i];
+      for(k=i;k<2*N;k++) T[j*2*N+k]+=mul*T[i*2*N+k];                
     }
   }
   
-  if(fabs(PASO[(N-1)*2*N+N-1])<10e-30){ 
-      delete []PASO;
+  if(fabs(T[(N-1)*2*N+N-1])<1e-30){ 
+      delete []T;
       return -1;
   }
       
   for(i=N-1;i>0;i--){
     for(j=i-1;j>=0;j--){
-      mul=-PASO[j*2*N+i]/PASO[i*2*N+i];
-      for(k=i;k<2*N;k++) PASO[j*2*N+k]+=mul*PASO[i*2*N+k];     
+      mul=-T[j*2*N+i]/T[i*2*N+i];
+      for(k=i;k<2*N;k++) T[j*2*N+k]+=mul*T[i*2*N+k];     
     }
   }  
   for(i=0;i<N;i++)
     for(j=N;j<2*N;j++)
-      PASO[i*2*N+j]/=PASO[i*2*N+i];  
+      T[i*2*N+j]/=T[i*2*N+i];  
     
   for(i=0;i<N;i++)
     for(j=0;j<N;j++)
-      A_1[i*N+j]=PASO[i*2*N+j+N];
+      A_1[i*N+j]=T[i*2*N+j+N];
 
-  delete []PASO;
+  delete []T;
   
   return 0;   
 }

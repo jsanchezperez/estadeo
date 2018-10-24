@@ -11,6 +11,7 @@
 #define MASK_H
 
 #include <vector>
+
 /**
  *
  * Compute the gradient with central differences
@@ -20,22 +21,23 @@ void gradient(
   float *input,  //input image
   float *dx,     //computed x derivative
   float *dy,     //computed y derivative
-  int nx,         //image width
-  int ny          //image height
+  int nx,        //image width
+  int ny         //image height
 );
 
 
 /**
- *
- * Compute the gradient in some points
- *
- */
-void gradient_points(
-  float *input,  //input image
-  std::vector<int> &x,
-  float *dx,     //computed x derivative
-  float *dy,     //computed y derivative
-  int nx          //number of colums
+  *
+  * Function to compute the gradient at given points
+  * It does not treat border pixels
+  *
+**/
+void gradient(
+    float *input, //input image
+    float *dx,    //computed x derivative
+    float *dy,    //computed y derivative
+    std::vector<int> &x, //positions to compute the gradient
+    const int nx  //image width
 );
 
 

@@ -3,7 +3,7 @@
 // copy of this license along this program. If not, see
 // <http://www.opensource.org/licenses/bsd-license.html>.
 //
-// Copyright (C) 2015, Javier Sánchez Pérez <jsanchez@dis.ulpgc.es>
+// Copyright (C) 2015-2018, Javier Sánchez Pérez <jsanchez@dis.ulpgc.es>
 // All rights reserved.
 
 /** 
@@ -44,34 +44,21 @@ using namespace std;
  *  Derivative of robust error functions
  *
  */
-float rhop(
+inline float rhop(
   float t2,     //squared difference of both images  
-  float lambda, //robust threshold
-  int    type    //choice of the robust error function
+  float lambda  //robust threshold
 )
 {
   float result=0.0;
   float lambda2=lambda*lambda;
-  switch(type)
-  {
-    case QUADRATIC:
-      result=1;
-      break;
-    default: 
-    case TRUNCATED_QUADRATIC:
-      if(t2<lambda2) result=1.0;
-      else result=0.0;
-      break;  
-    case GERMAN_MCCLURE:
-      result=lambda2/((lambda2+t2)*(lambda2+t2));
-      break;
-    case LORENTZIAN: 
-      result=1/(lambda2+t2);
-      break;
-    case CHARBONNIER:
-      result=1.0/(sqrt(t2+lambda2));
-      break;
-  }
+
+  //TRUNCATED_QUADRATIC:
+  //if(t2<lambda2) result=1.0;
+  //else result=0.0;
+  
+  //LORENTZIAN:
+  result=1/(lambda2+t2);
+  
   return result;
 }
 
@@ -84,19 +71,19 @@ float rhop(
  */
 void steepest_descent_images
 (
-  float *Ix,  //x derivate of the image
-  float *Iy,  //y derivate of the image
-  float *J,   //Jacobian matrix
-  float *DIJ, //output DI^t*J
+  float *Ix,   //x derivate of the image
+  float *Iy,   //y derivate of the image
+  float *J,    //Jacobian matrix
+  float *DIJ,  //output DI^t*J
   int nparams, //number of parameters
-  vector<int> &x //corner positions
+  int N        //number of points
 )
 {
   #pragma omp parallel for
-  for(unsigned int p=0; p<x.size(); p++)
+  for(unsigned int p=0; p<(unsigned int)N; p++)
     for(int n=0; n<nparams; n++)
-      DIJ[p*nparams+n]=Ix[x[p]]*J[2*p*nparams+n]+
-                       Iy[x[p]]*J[2*p*nparams+n+nparams];
+      DIJ[p*nparams+n]=Ix[p]*J[2*p*nparams+n]+
+                       Iy[p]*J[2*p*nparams+n+nparams];
 }
 
 /**
@@ -107,8 +94,8 @@ void steepest_descent_images
  */
 void hessian
 (
-  float *DIJ, //the steepest descent image
-  float *H,   //output Hessian matrix
+  float *DIJ,  //the steepest descent image
+  float *H,    //output Hessian matrix
   int nparams, //number of parameters
   int N        //number of values
 ) 
@@ -135,9 +122,9 @@ void hessian
  */
 void hessian
 (
-  float *DIJ, //the steepest descent image
-  float *rho, //robust function
-  float *H,   //output Hessian matrix
+  float *DIJ,  //the steepest descent image
+  float *rho,  //robust function
+  float *H,    //output Hessian matrix
   int nparams, //number of parameters
   int N        //number of values
 ) 
@@ -166,12 +153,12 @@ void inverse_hessian
 (
   float *H,   //input Hessian
   float *H_1, //output inverse Hessian 
-  int nparams  //number of parameters
+  int nparams //number of parameters
 ) 
 {
   if(inverse(H, H_1, nparams)==-1) 
-    //if the matrix is not invertible, set parameters to 0
-    for(int i=0; i<nparams*nparams; i++) H_1[i]=0;
+    //if the matrix is not invertible, set parameters to infinity
+    for(int i=0; i<nparams*nparams; i++) H_1[i]=999999.9;
 }
 
 
@@ -184,8 +171,8 @@ void difference_image
 (
   float *I,  //first image I1(x)
   float *Iw, //second warped image I2(x'(x;p)) 
-  vector<int> &x,
-  float *DI  //output difference array
+  float *DI, //output difference array
+  vector<int> &x //points
 ) 
 {
   #pragma omp parallel for
@@ -204,7 +191,6 @@ void robust_error_function
   float *DI,   //input difference array
   float *rho,  //output robust function
   float lambda,//threshold used in the robust functions
-  int   type,  //choice of robust error function
   int   N      //number of values
 )
 { 
@@ -212,7 +198,7 @@ void robust_error_function
   for(int i=0;i<N;i++)
   {
     float norm=DI[i]*DI[i];
-    rho[i]=rhop(norm,lambda,type);
+    rho[i]=rhop(norm,lambda);
   }
 }
 
@@ -227,8 +213,8 @@ void independent_vector
   float *DIJ, //the steepest descent image
   float *DI,  //I2(x'(x;p))-I1(x) 
   float *b,   //output independent vector
-  int nparams, //number of parameters
-  int N        //number of columns
+  int   nparams, //number of parameters
+  int   N     //number of columns
 )
 {
   //initialize the vector to zero
@@ -250,12 +236,12 @@ void independent_vector
  */
 void independent_vector
 (
-  float *DIJ, //the steepest descent image
-  float *DI,  //I2(x'(x;p))-I1(x) 
-  float *rho, //robust function
-  float *b,   //output independent vector
-  int nparams, //number of parameters
-  int N        //number of values
+  float *DIJ,    //the steepest descent image
+  float *DI,     //I2(x'(x;p))-I1(x) 
+  float *rho,    //robust function
+  float *b,      //output independent vector
+  int   nparams, //number of parameters
+  int   N        //number of values
 )
 {
   //initialize the vector to zero
@@ -279,7 +265,7 @@ float parametric_solve
   float *H_1, //inverse Hessian
   float *b,   //independent vector
   float *dp,  //output parameters increment 
-  int nparams  //number of parameters
+  int nparams //number of parameters
 )
 {
   float error=0.0;
@@ -317,8 +303,7 @@ void select_points(
   else
     for(int k=8;k<ny-8; k++)
         for(int l=8;l<nx-8; l++)
-          x.push_back(k*nx+l);
-	
+          x.push_back(k*nx+l);	
 }
 
 
@@ -335,39 +320,38 @@ void inverse_compositional_algorithm(
   float *p,    //parameters of the transform (output)
   int nparams, //number of parameters of the transform
   float TOL,   //Tolerance used for the convergence in the iterations
-  int nx,      //number of columns
-  int ny       //number of rows
+  int   nx,    //number of columns
+  int   ny     //number of rows
 )
 {
-  float *Ix =new float[nx*ny];   //x derivate of the first image
-  float *Iy =new float[nx*ny];   //y derivate of the first image
-
-  //Evaluate the gradient of I1
-  gradient(I1, Ix, Iy, nx, ny);
-  
   //find corner points
   vector<int> x;
   select_points(x, nx, ny);
   
-
   int N=x.size();
-  int size2=N*nparams;   //size of the image with transform parameters
+  int size2=N*nparams;       //size of the image with transform parameters
   int size3=nparams*nparams; //size for the Hessian
   int size4=2*N*nparams; 
-  float *Iw =new float[N];   //warp of the second image/
-  float *DI =new float[N];   //error image (I2(w)-I1)
-  float *DIJ=new float[size2];   //steepest descent images
-  float *dp =new float[nparams]; //incremental solution
-  float *b  =new float[nparams]; //steepest descent images
-  float *J  =new float[size4];   //jacobian matrix for all points
-  float *H  =new float[size3];   //Hessian matrix
-  float *H_1=new float[size3];   //inverse Hessian matrix
+  
+  float *Iw=new float[N];      //warp of the second image/
+  float *DI=new float[N];      //error image (I2(w)-I1)
+  float *DIJ=new float[size2]; //steepest descent images
+  float *dp=new float[nparams];//incremental solution
+  float *b=new float[nparams]; //steepest descent images
+  float *J=new float[size4];   //jacobian matrix for all points
+  float *H=new float[size3];   //Hessian matrix
+  float *H_1=new float[size3]; //inverse Hessian matrix
+  float *Ix=new float[N];      //x derivate of the first image
+  float *Iy=new float[N];      //y derivate of the first image
+
+  //Evaluate the gradient of I1
+  gradient(I1, Ix, Iy, x, nx);
 
   //Evaluate the Jacobian
   jacobian(J, x, nparams, nx);
 
   //Compute the steepest descent images
-  steepest_descent_images(Ix, Iy, J, DIJ, nparams, x);
+  steepest_descent_images(Ix, Iy, J, DIJ, nparams, N);
 
   //Compute the Hessian matrix
   hessian(DIJ, H, nparams, N);
@@ -379,10 +363,11 @@ void inverse_compositional_algorithm(
 
   do{     
     //Warp image I2
-    bicubic_interpolation(I2, x, Iw, p, nparams, nx, ny);
+    //bicubic_interpolation(I2, x, Iw, p, nparams, nx, ny);
+    bilinear_interpolation(I2, x, Iw, p, nparams, nx, ny);
 
     //Compute the error image (I1-I2w)
-    difference_image(I1, Iw, x, DI);
+    difference_image(I1, Iw, DI, x);
     
     //Compute the independent vector
     independent_vector(DIJ, DI, b, nparams, N);
@@ -396,18 +381,17 @@ void inverse_compositional_algorithm(
     niter++;    
   }
   while(error>TOL && niter<MAX_ITER);
-  
-  //delete allocated memory
-  delete []DI;
-  delete []Ix;
-  delete []Iy;
+
   delete []Iw;
+  delete []DI;
   delete []DIJ;
   delete []dp;
   delete []b;
   delete []J;
   delete []H;
   delete []H_1;
+  delete []Ix;
+  delete []Iy;
 }
 
 
@@ -422,43 +406,42 @@ void robust_inverse_compositional_algorithm(
   float *I1,     //first image
   float *I2,     //second image
   float *p,      //parameters of the transform (output)
-  int nparams,   //number of parameters of the transform
+  int   nparams, //number of parameters of the transform
   float TOL,     //Tolerance used for the convergence in the iterations
-  int    robust, //robust error function
   float lambda,  //parameter of robust error function
-  int nx,        //number of columns
-  int ny         //number of rows
+  int   nx,      //number of columns
+  int   ny       //number of rows
 )
 {  
-  float *Ix =new float[nx*ny];       //x derivate of the first image
-  float *Iy =new float[nx*ny];       //y derivate of the first image
-
-  //Evaluate the gradient of I1
-  gradient(I1, Ix, Iy, nx, ny);
-
-  //find corner points
+  //find reference points
   vector<int> x;
   select_points(x, nx, ny);      
 
-  int N=x.size();            //number of corner points
-  int size2=N*nparams;   //size of the image with transform parameters
-  int size3=nparams*nparams; //size for the Hessian
+  int N=x.size();              //number of corner points
+  int size2=N*nparams;         //size of the image with transform parameters
+  int size3=nparams*nparams;   //size for the Hessian
   int size4=2*N*nparams; 
-  float *Iw =new float[N];       //warp of the second image/
-  float *DI =new float[N];       //error image (I2(w)-I1)
-  float *DIJ=new float[size2];   //steepest descent images
-  float *dp =new float[nparams]; //incremental solution
-  float *b  =new float[nparams]; //steepest descent images
-  float *J  =new float[size4];   //jacobian matrix for all points
-  float *H  =new float[size3];   //Hessian matrix
-  float *H_1=new float[size3];   //inverse Hessian matrix
-  float *rho=new float[N];       //robust function  
   
+  float *Iw=new float[N];      //warp of the second image/
+  float *DI=new float[N];      //error image (I2(w)-I1)
+  float *DIJ=new float[size2]; //steepest descent images
+  float *dp=new float[nparams];//incremental solution
+  float *b=new float[nparams]; //steepest descent images
+  float *J=new float[size4];   //jacobian matrix for all points
+  float *H=new float[size3];   //Hessian matrix
+  float *H_1=new float[size3]; //inverse Hessian matrix
+  float *Ix=new float[N];      //x derivate of the first image
+  float *Iy=new float[N];      //y derivate of the first image
+  float *rho=new float[N];     //robust function  
+
+  //Evaluate the gradient of I1
+  gradient(I1, Ix, Iy, x, nx);
+
   //Evaluate the Jacobian
   jacobian(J, x, nparams, nx);
 
   //Compute the steepest descent images
-  steepest_descent_images(Ix, Iy, J, DIJ, nparams, x);
+  steepest_descent_images(Ix, Iy, J, DIJ, nparams, N);
   
   //Iterate
   float error=1E10;
@@ -470,13 +453,14 @@ void robust_inverse_compositional_algorithm(
   
   do{     
     //Warp image I2
-    bicubic_interpolation(I2, x, Iw, p, nparams, nx, ny);
+    //bicubic_interpolation(I2, x, Iw, p, nparams, nx, ny);
+    bilinear_interpolation(I2, x, Iw, p, nparams, nx, ny);
 
     //Compute the error image (I1-I2w)
-    difference_image(I1, Iw, x, DI);
+    difference_image(I1, Iw, DI, x);
 
     //compute robustifiction function
-    robust_error_function(DI, rho, lambda_it, robust, N);
+    robust_error_function(DI, rho, lambda_it, N);
     if(lambda<=0 && lambda_it>LAMBDA_N) 
     {
       lambda_it*=LAMBDA_RATIO;
@@ -499,18 +483,17 @@ void robust_inverse_compositional_algorithm(
     niter++;    
   }
   while(error>TOL && niter<MAX_ITER);
-  
-  //delete allocated memory
-  delete []DI;
-  delete []Ix;
-  delete []Iy;
+
   delete []Iw;
+  delete []DI;
   delete []DIJ;
   delete []dp;
   delete []b;
   delete []J;
   delete []H;
   delete []H_1;
+  delete []Ix;
+  delete []Iy;
   delete []rho;
 }
 
@@ -521,21 +504,20 @@ void robust_inverse_compositional_algorithm(
   *
 **/
 void pyramidal_inverse_compositional_algorithm(
-    float *I1,      //first image
-    float *I2,      //second image
-    float *p,       //parameters of the transform
-    int    nparams, //number of parameters
-    int    nxx,     //image width
-    int    nyy,     //image height
-    int    nzz,     //number of channels
-    int    nscales, //number of scales
-    float  nu,      //downsampling factor
-    float  TOL,     //stopping criterion threshold
-    int    robust,  //robust error function
-    float  lambda   //parameter of robust error function
+    float *I1,     //first image
+    float *I2,     //second image
+    float *p,      //parameters of the transform
+    int   nparams, //number of parameters
+    int   nxx,     //image width
+    int   nyy,     //image height
+    int   nscales, //number of scales
+    float TOL,     //stopping criterion threshold
+    int   robust,  //robust error function
+    float lambda,  //parameter of robust error function
+    int   max_d    //maximum size of finest scale
 )
 {
-    int size=nxx*nyy*nzz;
+    int size=nxx*nyy;
 
     float **I1s=new float*[nscales];
     float **I2s=new float*[nscales];
@@ -566,7 +548,7 @@ void pyramidal_inverse_compositional_algorithm(
     //create the scales
     for(int s=1; s<nscales; s++)
     {
-      zoom_size(nx[s-1], ny[s-1], nx[s], ny[s], nu);
+      zoom_size(nx[s-1], ny[s-1], nx[s], ny[s]);
 
       const int size=nx[s]*ny[s];
 
@@ -578,25 +560,29 @@ void pyramidal_inverse_compositional_algorithm(
         ps[s][i]=0.0;
 
       //zoom the images from the previous scale
-      zoom_out(I1s[s-1], I1s[s], nx[s-1], ny[s-1], nu);
-      zoom_out(I2s[s-1], I2s[s], nx[s-1], ny[s-1], nu);
+      zoom_out(I1s[s-1], I1s[s], nx[s-1], ny[s-1]);
+      zoom_out(I2s[s-1], I2s[s], nx[s-1], ny[s-1]);
     }  
 
     //pyramidal approach for computing the transformation
     for(int s=nscales-1; s>=0; s--)
     {
-      //incremental refinement for this scale
-      if(robust==QUADRATIC)
-        inverse_compositional_algorithm(
-          I1s[s], I2s[s], ps[s], nparams, TOL, nx[s], ny[s]
-        );
-      else
-        robust_inverse_compositional_algorithm(
-          I1s[s], I2s[s], ps[s], nparams, TOL, 
-          robust, lambda, nx[s], ny[s]
-        );
-
-      //if it is not the finer scale, then upsample the parameters
+      //compute transformation if smaller than maximum allowed size
+      if(nx[s]<max_d || ny[s]<max_d)
+      {
+        //incremental refinement for this scale
+        if(robust==QUADRATIC)
+          inverse_compositional_algorithm(
+            I1s[s], I2s[s], ps[s], nparams, TOL, nx[s], ny[s]
+          );
+        else
+          robust_inverse_compositional_algorithm(
+            I1s[s], I2s[s], ps[s], nparams, TOL, 
+            lambda, nx[s], ny[s]
+          );
+      }
+      
+      //if it is not the finest scale, then upsample the parameters
       if(s) 
         zoom_in_parameters(
           ps[s], ps[s-1], nparams, nx[s], ny[s], nx[s-1], ny[s-1]

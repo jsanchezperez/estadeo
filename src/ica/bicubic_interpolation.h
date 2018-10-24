@@ -13,13 +13,6 @@
 
 #include <vector>
 
-/**
-  *
-  * Neumann boundary condition test
-  *
-**/
-int neumann_bc (int x, int nx);
-
 
 /**
   *
@@ -32,9 +25,8 @@ bicubic_interpolation(
   float *input,//image to be interpolated
   float uu,    //x component of the vector field
   float vv,    //y component of the vector field
-  int nx,       //width of the image
-  int ny,       //height of the image
-  bool border_out = false //if true, put zeros outside the region
+  int nx,      //width of the image
+  int ny       //height of the image
 );
 
 
@@ -70,14 +62,13 @@ bicubic_interpolation(
   *
 **/
 void bicubic_interpolation(
-  float *input,        //image to be warped
-  std::vector<int> &x, //selected points
-  float *output,       //warped output image with bicubic interpolation
-  float *params,       //x component of the vector field
-  int nparams,          //number of parameters of the transform
-  int nx,               //width of the image
-  int ny,               //height of the image
-  bool border_out=true  //if true, put zeros outside the region
+  float *input,   //image to be warped
+  std::vector<int> &p, //selected points
+  float *output,//warped output image with bicubic interpolation
+  float *params,//x component of the vector field
+  int   nparams,  //number of parameters of the transform
+  int   nx,       //width of the image
+  int   ny        //height of the image 
 );
 
 
@@ -91,13 +82,25 @@ void bicubic_interpolation(
   float *input,        //image to be warped
   float *output,       //warped output image with bicubic interpolation
   float *params,       //x component of the vector field
-  int nparams,          //number of parameters of the transform
-  int nx,               //width of the image
-  int ny,               //height of the image
-  bool border_out=true  //if true, put zeros outside the region
+  int nparams,         //number of parameters of the transform
+  int nx,              //width of the image
+  int ny               //height of the image
 );
 
 
-
+/**
+  *
+  * Function to warp the image using bilinear interpolation
+  *
+**/
+void bilinear_interpolation(
+  float *input,   //image to be warped
+  std::vector<int> &p, //selected points
+  float *output,  //warped output image with bicubic interpolation
+  float *params,  //x component of the vector field
+  int nparams,    //number of parameters of the transform
+  int nx,         //width of the image
+  int ny          //height of the image
+);
 
 #endif

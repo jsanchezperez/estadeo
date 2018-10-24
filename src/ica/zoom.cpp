@@ -25,15 +25,14 @@
 **/
 void zoom_size 
 (
-  int nx,       //width of the orignal image
-  int ny,       //height of the orignal image          
-  int &nxx,     //width of the zoomed image
-  int &nyy,     //height of the zoomed image
-  float factor  //zoom factor between 0 and 1
+  int nx,   //width of the orignal image
+  int ny,   //height of the orignal image          
+  int &nxx, //width of the zoomed image
+  int &nyy  //height of the zoomed image
 )
 {
-  nxx = (int) ((float) nx * factor + 0.5);
-  nyy = (int) ((float) ny * factor + 0.5);
+  nxx = (int) ((float) nx/2.+0.5);
+  nyy = (int) ((float) ny/2.+0.5);
 }
 
 
@@ -46,30 +45,30 @@ void zoom_out
 (
   float *I,    //input image
   float *Iout, //output image
-  int nx,      //image width
-  int ny,      //image height          
-  float factor //zoom factor between 0 and 1
+  int   nx,    //image width
+  int   ny     //image height          
 )
 {
-  int nxx, nyy, original_size =nx*ny; 
-  float *Is=new float[original_size];
+  int nxx, nyy; 
+  float *Is=new float[nx*ny];
 
   //calculate the size of the zoomed image
-  zoom_size(nx, ny, nxx, nyy, factor);
+  zoom_size(nx, ny, nxx, nyy);
   
   //compute the Gaussian sigma for smoothing
-  //sigma=sqrt(1.4^2-0.7^2)
-  float sigma=ZOOM_SIGMA_ZERO*sqrt(1.0/(factor*factor)-1.0); //1.21
+  //sigma=sqrt(1.4^2-0.7^2) //1.21
+  float sigma=ZOOM_SIGMA_ZERO*sqrt(3); 
 
   //pre-smooth the image
-  gaussian(I, Is, nx, ny, sigma);
+  gaussian(I, Is, nx, ny, sigma, 4);
   
   //re-sample image
+  #pragma omp parallel for
   for (int i1=0; i1<nyy; i1++)
     for (int j1=0; j1<nxx; j1++)
     {
-      int i2=(int)(i1/factor);
-      int j2=(int)(j1/factor);
+      int i2=2*i1;
+      int j2=2*j1;
       Iout[i1*nxx+j1]=Is[i2*nx+j2];
     }   
   delete []Is;
@@ -86,10 +85,10 @@ void zoom_in_parameters
   float *p,    //input image
   float *pout, //output image   
   int nparams, //number of parameters
-  int nx,      //width of the original image
-  int ny,      //height of the original image
-  int nxx,     //width of the zoomed image
-  int nyy      //height of the zoomed image
+  int   nx,    //width of the original image
+  int   ny,    //height of the original image
+  int   nxx,   //width of the zoomed image
+  int   nyy    //height of the zoomed image
 )
 {
   //compute the zoom factor

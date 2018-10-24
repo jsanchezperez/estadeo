@@ -21,8 +21,7 @@ void zoom_size
   int nx,   //width of the orignal image
   int ny,   //height of the orignal image          
   int &nxx, //width of the zoomed image
-  int &nyy, //height of the zoomed image
-  float factor = 0.5 //zoom factor between 0 and 1
+  int &nyy  //height of the zoomed image
 );
 
 /**
@@ -34,9 +33,8 @@ void zoom_out
 (
   float *I,    //input image
   float *Iout, //output image
-  int nx,       //image width
-  int ny,       //image height             
-  float factor = 0.5 //zoom factor between 0 and 1
+  int   nx,    //image width
+  int   ny     //image height             
 );
 
 /**
@@ -48,11 +46,11 @@ void zoom_in_parameters
 (
   float *p,    //input image
   float *pout, //output image   
-  int nparams,  //number of parameters
-  int nx,       //width of the original image
-  int ny,       //height of the original image
-  int nxx,      //width of the zoomed image
-  int nyy       //height of the zoomed image
+  int   nparams, //number of parameters
+  int   nx,    //width of the original image
+  int   ny,    //height of the original image
+  int   nxx,   //width of the zoomed image
+  int   nyy    //height of the zoomed image
 );
 
 #endif

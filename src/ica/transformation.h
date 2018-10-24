@@ -30,8 +30,8 @@
  */
 void jacobian
 (
-  float *J,   //computed Jacobian
-  std::vector<int> &p,
+  float *J,    //computed Jacobian
+  std::vector<int> &p, //point coordinates
   int nparams, //number of parameters
   int nx       //number of columns of the image
 );

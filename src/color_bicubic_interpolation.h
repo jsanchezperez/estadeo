@@ -46,4 +46,20 @@ void bicubic_interpolation(
 );
 
 
+/**
+  *
+  * Function to warp the image using bilinear interpolation
+  *
+**/
+void bilinear_interpolation(
+  float *input,   //image to be warped
+  float *output,  //warped output image with bicubic interpolation
+  float *params,  //x component of the vector field
+  int nparams,    //number of parameters of the transform
+  int nx,         //width of the image
+  int ny,         //height of the image
+  int nz          //number of channels of the image       
+);
+
+
 #endif

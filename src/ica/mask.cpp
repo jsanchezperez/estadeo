@@ -80,6 +80,30 @@ void gradient(
 
 
 /**
+  *
+  * Function to compute the gradient at given points
+  * It does not treat border pixels
+  *
+**/
+void gradient(
+    float *input, //input image
+    float *dx,    //computed x derivative
+    float *dy,    //computed y derivative
+    std::vector<int> &x,  //positions to compute the gradient
+    const int nx  //image width
+)
+{
+  //apply the gradient to the center body of the image
+  #pragma omp parallel for
+  for(unsigned int i = 0; i < x.size(); i++)
+  {
+     const int k = x[i];
+     dx[i] = 0.5*(input[k+1] - input[k-1]);
+     dy[i] = 0.5*(input[k+nx] - input[k-nx]);
+  }
+}
+
+/**
  *
  * Convolution with a Gaussian
  *

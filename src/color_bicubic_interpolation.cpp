@@ -3,7 +3,7 @@
 // copy of this license along this program. If not, see
 // <http://www.opensource.org/licenses/bsd-license.html>.
 //
-// Copyright (C) 2017, Javier Sánchez Pérez <jsanchez@ulpgc.es>
+// Copyright (C) 2015-2018, Javier Sánchez Pérez <jsanchez@ulpgc.es>
 // Copyright (C) 2014, Nelson Monzón López <nmonzon@ctim.es>
 // All rights reserved.
 
@@ -12,14 +12,28 @@
 #include "bicubic_interpolation.h"
 #include "transformation.h"
 
+
+/**
+  *
+  * Neumann boundary condition test
+  *
+**/
+int neumann_bc (int x, int nx)
+{
+  if (x<0) x=0;
+  else if (x >= nx)
+    x = nx - 1;
+  return x;
+}
+
+
 /**
   *
   * Compute the bicubic interpolation of a point in an image. 
   * It detects if the point goes beyond the image domain
   *
 **/
-float
-bicubic_interpolation(
+float bicubic_interpolation(
   float *input, //image to be interpolated
   float uu,     //x component of the vector field
   float vv,     //y component of the vector field
@@ -113,4 +127,63 @@ void bicubic_interpolation(
         );
     }
 }
+
+
+/**
+  *
+  * Function to warp the image using bilinear interpolation
+  *
+**/
+void bilinear_interpolation(
+  float *input,   //image to be warped
+  float *output,  //warped output image with bicubic interpolation
+  float *params,  //x component of the vector field
+  int nparams,    //number of parameters of the transform
+  int nx,         //width of the image
+  int ny,         //height of the image
+  int nz          //number of channels of the image       
+)
+{
+  #pragma omp parallel for
+  for(int i = 0; i < ny; i++)
+    for(int j = 0; j < nx; j++)
+    {
+       float uu, vv;
+
+       //transform coordinates using the parametric model
+       project(j, i, params, uu, vv, nparams);
+ 
+       if(uu<1 || uu>nx-2 || vv<1 || vv>ny-2)
+         for(int k=0; k<nz; k++)
+           output[(j+nx*i)*nz+k]=0;
+       else {
+         int sx=(uu<0)? -1: 1;
+         int sy=(vv<0)? -1: 1;
+         int x, y, dx, dy;
+
+         x =(int) uu;
+         y =(int) vv;
+         dx=(int) uu+sx;
+         dy=(int) vv+sy;
+         
+         for(int k=0; k<nz; k++){
+           float p1=input[(x +nx*y)*nz+k];
+           float p2=input[(dx+nx*y)*nz+k];
+           float p3=input[(x +nx*dy)*nz+k];
+           float p4=input[(dx+nx*dy)*nz+k];
+
+           float e1=((float) sx*(uu-x));
+           float E1=((float) 1.0-e1);
+           float e2=((float) sy*(vv-y));
+           float E2=((float) 1.0-e2);
+
+           float w1=E1*p1+e1*p2;
+           float w2=E1*p3+e1*p4;
+
+           output[(j+nx*i)*nz+k]=E2*w1+e2*w2;
+         }
+       }
+    }
+}
+
 

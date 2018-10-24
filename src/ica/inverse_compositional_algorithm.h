@@ -36,17 +36,6 @@
 #define LAMBDA_N 5
 #define LAMBDA_RATIO 0.90
 
-/**
- *
- *  Derivative of robust error functions
- *
- */
-float rhop(
-  float t2,    //squared difference of both images  
-  float sigma, //robust threshold
-  int   type   //choice of the robust error function
-);
- 
 
 /**
   *
@@ -56,13 +45,13 @@ float rhop(
   *
 **/
 void inverse_compositional_algorithm(
-  float *I1,   //first image
-  float *I2,   //second image
-  float *p,    //parameters of the transform (output)
-  int nparams,  //number of parameters of the transform
-  int nx,       //number of columns of the image
-  int ny,       //number of rows of the image
-  float TOL    //Tolerance used for the convergence in the iterations
+  float *I1,     //first image
+  float *I2,     //second image
+  float *p,      //parameters of the transform (output)
+  int   nparams, //number of parameters of the transform
+  int   nx,      //number of columns of the image
+  int   ny,      //number of rows of the image
+  float TOL      //Tolerance used for the convergence in the iterations
 );
 
 
@@ -76,13 +65,14 @@ void robust_inverse_compositional_algorithm(
   float *I1,    //first image
   float *I2,    //second image
   float *p,     //parameters of the transform (output)
-  int nparams,   //number of parameters of the transform
-  int nx,        //number of columns of the image
-  int ny,        //number of rows of the image
+  int   nparams,//number of parameters of the transform
+  int   nx,     //number of columns of the image
+  int   ny,     //number of rows of the image
   float TOL,    //Tolerance used for the convergence in the iterations
-  int    robust, //robust error function
+  int   robust, //robust error function
   float lambda  //parameter of robust error function
 );
+
 
 /**
   *
@@ -90,18 +80,17 @@ void robust_inverse_compositional_algorithm(
   *
 **/
 void pyramidal_inverse_compositional_algorithm(
-    float *I1,      //first image
-    float *I2,      //second image
-    float *p,       //parameters of the transform
-    int    nparams, //number of parameters
-    int    nxx,     //image width
-    int    nyy,     //image height
-    int    nzz,     //number of channels
-    int    nscales, //number of scales
-    float  nu,      //downsampling factor
-    float  TOL,     //stopping criterion threshold
-    int    robust,  //robust error function
-    float  lambda   //parameter of robust error function
+    float *I1,     //first image
+    float *I2,     //second image
+    float *p,      //parameters of the transform
+    int   nparams, //number of parameters
+    int   nxx,     //image width
+    int   nyy,     //image height
+    int   nscales, //number of scales
+    float TOL,     //stopping criterion threshold
+    int   robust,  //robust error function
+    float lambda,  //parameter of robust error function
+    int   max_d=5000 //maximum size of finest scale
 );
 
 #endif

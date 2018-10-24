@@ -34,4 +34,4 @@ echo Converting $output_raw_video to $outvideo
 avconv -v error -f rawvideo -pix_fmt rgb24 -video_size $size -framerate $framerate -i $output_raw_video  -pix_fmt yuv420p -y $outvideo
 echo
 
-#rm -R tmp/
+rm -R tmp/

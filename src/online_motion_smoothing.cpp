@@ -118,7 +118,8 @@ void online_local_matrix_based_smoothing
   for(int i=0;i<ntransforms;i++) 
     inverse_transform(&(H[i*nparams]), &(H_1[i*nparams]), nparams);
 
-  for(int i=0;i<ntransforms;i++)
+  //recompute the stabilization for past frames
+  for(int i=ntransforms-radius;i<ntransforms;i++)
   {
     int t1=(i-radius>0)?i-radius:0;
     int t2=((i+radius)<ntransforms)?(i+radius):ntransforms-1;
@@ -145,8 +146,7 @@ void online_local_matrix_based_smoothing
          Hc[(i+1)*nparams+j]=H[(i+1)*nparams+j];
       for(int j=i+2;j<=t2;j++)
          compose_transform(
-            &(H[j*nparams]), &(Hc[(j-1)*nparams]), 
-            &(Hc[j*nparams]), nparams
+            &(H[j*nparams]), &(Hc[(j-1)*nparams]), &(Hc[j*nparams]), nparams
          );
     }
 

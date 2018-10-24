@@ -23,7 +23,7 @@ using namespace std;
  */
 void jacobian
 (
-  float *J,   //computed Jacobian
+  float *J,    //computed Jacobian
   vector<int> &p, //point coordinates
   int nparams, //number of parameters
   int nx       //number of columns
@@ -43,44 +43,43 @@ void jacobian
     case EUCLIDEAN_TRANSFORM:  //p=(tx, ty, tita)
       for(int i=0; i<N; i++)
       {
-	int c=2*i*nparams;
-	int x=p[i]%nx;
-	int y=(int)(p[i]/nx);
-	J[c]  =1.0; J[c+1]=0.0; J[c+2]=-y; 
-	J[c+3]=0.0; J[c+4]=1.0; J[c+5]= x; 
+        int c=2*i*nparams;
+        int x=p[i]%nx;
+        int y=(int)(p[i]/nx);
+        J[c]  =1.0; J[c+1]=0.0; J[c+2]=-y; 
+        J[c+3]=0.0; J[c+4]=1.0; J[c+5]= x; 
       }
       break;
     case SIMILARITY_TRANSFORM: //p=(tx, ty, a, b)
       for(int i=0; i<N; i++)
       {
-	int c=2*i*nparams;
-	int x=p[i]%nx;
-	int y=(int)(p[i]/nx);
-	J[c]  =1.0; J[c+1]=0.0; J[c+2]=x; J[c+3]=-y;
-	J[c+4]=0.0; J[c+5]=1.0; J[c+6]=y; J[c+7]= x;
+        int c=2*i*nparams;
+        int x=p[i]%nx;
+        int y=(int)(p[i]/nx); 
+        J[c]  =1.0; J[c+1]=0.0; J[c+2]=x; J[c+3]=-y;
+        J[c+4]=0.0; J[c+5]=1.0; J[c+6]=y; J[c+7]= x;
       }
       break;
     case AFFINITY_TRANSFORM:  //p=(tx, ty, a00, a01, a10, a11)
       for(int i=0; i<N; i++)
       {
-	int c=2*i*nparams;
-	int x=p[i]%nx;
-	int y=(int)(p[i]/nx);
-	J[c]  =1.0;J[c+1]=0.0;J[c+2]=  x;J[c+3]=  y;J[c+ 4]=0.0;J[c+ 5]=0.0;
-	J[c+6]=0.0;J[c+7]=1.0;J[c+8]=0.0;J[c+9]=0.0;J[c+10]=  x;J[c+11]=  y;
+        int c=2*i*nparams;
+        int x=p[i]%nx;
+        int y=(int)(p[i]/nx);
+        J[c]  =1.0;J[c+1]=0.0;J[c+2]=  x;J[c+3]=  y;J[c+ 4]=0.0;J[c+ 5]=0.0;
+        J[c+6]=0.0;J[c+7]=1.0;J[c+8]=0.0;J[c+9]=0.0;J[c+10]=  x;J[c+11]=  y;
       }
       break;    
     case HOMOGRAPHY_TRANSFORM: //p=(h00, h01,..., h21)
       for(int i=0; i<N; i++)
       {
-	int c=2*i*nparams;
-	int x=p[i]%nx;
-	int y=(int)(p[i]/nx);
-	J[c]  =  x; J[c+1]=  y; J[c+2]=1.0;  J[c+3]=0.0; 
-	J[c+4]=0.0; J[c+5]=0.0; J[c+6]=-x*x; J[c+7]=-x*y;
-	
-	J[c+8]=0.0; J[c+9] =0.0; J[c+10]= 0.0; J[c+11]=   x; 
-	J[c+12]= y; J[c+13]=1.0; J[c+14]=-x*y; J[c+15]=-y*y;
+        int c=2*i*nparams;
+        int x=p[i]%nx;
+        int y=(int)(p[i]/nx);
+        J[c]  =  x; J[c+1]=  y; J[c+2]=1.0;  J[c+3]=0.0; 
+        J[c+4]=0.0; J[c+5]=0.0; J[c+6]=-x*x; J[c+7]=-x*y;
+        J[c+8]=0.0; J[c+9] =0.0; J[c+10]= 0.0; J[c+11]=   x; 
+        J[c+12]= y; J[c+13]=1.0; J[c+14]=-x*y; J[c+15]=-y*y;
       }
       break;
   }
@@ -256,7 +255,7 @@ void params2matrix
 (
   float *p,      //input parametric model
   float *matrix, //output matrix
-  int nparams     //number of parameters
+  int   nparams  //number of parameters
 )
 {
   matrix[0]=matrix[4]=matrix[8]=1;
@@ -304,7 +303,6 @@ void params2matrix
     
   }
 }
-
 
 
 /**
@@ -518,10 +516,10 @@ void inverse_transform
       const float det=2*a+a*a+b*b+1;
       if(det*det>1E-10)
       {
-	p[0]=(-c-a*c-b*d)/det;
-	p[1]=(-d-a*d+b*c)/det;
-	p[2]=(a+1)/det-1;
-	p[3]=-b/det;
+        p[0]=(-c-a*c-b*d)/det;
+        p[1]=(-d-a*d+b*c)/det;
+        p[2]=(a+1)/det-1;
+        p[3]=-b/det;
       }
       else p[0]=p[1]=p[2]=p[3]=0;
     }
@@ -537,12 +535,12 @@ void inverse_transform
       const float det=a-b*d+e+a*e+1;	
       if(det*det>1E-10)
       {
-	p[0]=(-c+b*f-c*e)/det;
-	p[1]=(-f-a*f+c*d)/det;
-	p[2]=(e+1)/det-1;
-	p[3]=-b/det;
-	p[4]=-d/det;
-	p[5]=(a+1)/det-1; 
+        p[0]=(-c+b*f-c*e)/det;
+        p[1]=(-f-a*f+c*d)/det;
+        p[2]=(e+1)/det-1;
+        p[3]=-b/det;
+        p[4]=-d/det;
+        p[5]=(a+1)/det-1; 
       }
       else p[0]=p[1]=p[2]=p[3]=p[4]=p[5]=0;
     }
@@ -560,14 +558,14 @@ void inverse_transform
       const float det=(-a+b*d-e-a*e-1);
       if(det*det>1E-10)
       {
-	p[0]=(f*h-e-1)/det-1;
-	p[1]=(b-c*h)/det;
-	p[2]=(c-b*f+c*e)/det;
-	p[3]=(d-f*g)/det;
-	p[4]=(-a+c*g-1)/det-1;
-	p[5]=(f+a*f-c*d)/det;
-	p[6]=(g-d*h+g*e)/det;
-	p[7]=(h+a*h-b*g)/det;
+        p[0]=(f*h-e-1)/det-1;
+        p[1]=(b-c*h)/det;
+        p[2]=(c-b*f+c*e)/det;
+        p[3]=(d-f*g)/det;
+        p[4]=(-a+c*g-1)/det-1;
+        p[5]=(f+a*f-c*d)/det;
+        p[6]=(g-d*h+g*e)/det;
+        p[7]=(h+a*h-b*g)/det;
       }
       else p[0]=p[1]=p[2]=p[3]=p[4]=p[5]=p[6]=p[7]=0;
     }
