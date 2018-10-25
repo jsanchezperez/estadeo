@@ -6,14 +6,17 @@
 // Copyright (C) 2017-2018, Javier Sánchez Pérez <jsanchez@ulpgc.es>
 // All rights reserved.
 
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <algorithm> 
+
 #include "estadeo.h"
 #include "motion_smoothing.h"
 #include "utils.h"
 #include "transformation.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #define PAR_DEFAULT_OUTVIDEO "output_video.raw"
 #define PAR_DEFAULT_TRANSFORM SIMILARITY_TRANSFORM
@@ -181,7 +184,6 @@ void rgb2gray(
 }
 
 
-
 /**
  *
  *  Main program:
@@ -193,29 +195,30 @@ int main (int argc, char *argv[])
 {
   //parameters of the method
   char  *video_in, video_out[300];
-  char  *out_transform, *out_smooth_transform;
+  char  *out_transform, *out_stransform;
   int   width, height, nchannels=3, nframes;
-  int   nparams, smooth_strategy, verbose;
+  int   nparams, strategy, verbose;
   float sigma;
   
   //read the parameters from the console
   int result=read_parameters(
-    argc, argv, &video_in, video_out, &out_transform, &out_smooth_transform,
-    width, height, nframes, nparams, smooth_strategy, sigma, verbose
+    argc, argv, &video_in, video_out, &out_transform, &out_stransform,
+    width, height, nframes, nparams, strategy, sigma, verbose
   );
   
   if(result)
   {
     if(verbose)
       printf(
-        " Input video: '%s'\n Output video: '%s'\n Width: %d, Height: %d "
+        " Input video: '%s'\n Output video: '%s'\n Width: %d, Height: %d,"
         " Number of frames: %d\n Transformation: %d, Smoothing: %d\n",
-        video_in, video_out, width, height, nframes, nparams, smooth_strategy
+        video_in, video_out, width, height, nframes, nparams, strategy
       );
     
     int fsize=width*height;
     int csize=fsize*nchannels;
     int vsize=csize*nframes;
+    
     unsigned char *I=new unsigned char[vsize];
    
     size_t r=read_video(video_in, I, vsize);
@@ -226,46 +229,68 @@ int main (int argc, char *argv[])
       return EXIT_FAILURE;
     }
 
-    if(verbose) 
-      printf(" Size of video in bytes %d\n", (int) r);
+    if(verbose) printf(" Size of video in bytes %d\n", (int) r);
 
     //convert the input video to float and gray levels
-    float *Ic=new float[vsize];
-    float *Ig=new float[fsize*nframes];
-    for(int i=0; i<vsize; i++)
+    float *Ic=new float[csize];
+    float *I1=new float[fsize];
+    float *I2=new float[fsize];
+    
+    if(verbose) printf("\n Starting the stabilization\n");
+
+    //read the first frame from input stream
+    for(int i=0; i<csize; i++)
       Ic[i]=(float)I[i];
-      
-    for(int i=0; i<nframes; i++)
-      rgb2gray(&Ic[csize*i], &Ig[fsize*i], width, height, nchannels);
-    
-    if(verbose)
-      printf("\n Starting the stabilization\n");
+  
+    //convert it to grayscale
+    rgb2gray(Ic, I1, width, height, nchannels);
 
-    //call the method for video stabilization
-    estadeo_online(
-        Ig, Ic, width, height, nchannels, nframes, nparams, smooth_strategy,
-        sigma, out_smooth_transform, verbose
-    );
+    Timer timer;
+    estadeo stab(strategy, nparams, sigma, verbose);
     
-    //convert the stabilized video to unsigned char
-    for(int i=0; i<vsize; i++)
+    for(int f=1; f<nframes; f++)
     {
-      if(Ic[i]<0)
-        I[i]=0;
-      else if(Ic[i]>255)
-        I[i]=255;
-      else I[i]=(unsigned char)Ic[i];
-    }
-    
-    if(verbose)
-      printf("\n Writing the output video to '%s'\n", video_out);
+      //read the next frame from input stream
+      for(int i=0; i<csize; i++)
+        Ic[i]=(float)I[f*csize+i];
+      
+      //convert it to grayscale
+      rgb2gray(Ic, I2, width, height, nchannels);
+      
+      //call the method for stabilizing current frame
+      stab.process_frame(I1, I2, Ic, timer, width, height, nchannels);
 
+      if(verbose) timer.print_time(f);
+      
+      //save the stabilized video to the output stream
+      for(int i=0; i<csize; i++)
+      {
+        if(Ic[i]<0) I[f*csize+i]=0;
+        else if(Ic[i]>255) I[f*csize+i]=255;
+        else I[f*csize+i]=(unsigned char)Ic[i];
+      }
+      
+      std::swap(I1, I2);
+      
+      //save the motion transformations 
+      if(out_transform!=NULL)
+        save_transform(out_transform, stab.get_H(), nparams);
+
+      //save the stabilizing transformation
+      if(out_stransform!=NULL)
+        save_transform(out_stransform, stab.get_smooth_H(), nparams);
+    }
+        
+    if(verbose) timer.print_avg_time(nframes);
+    
     write_video(video_out, I, vsize);
     
     delete []I;
     delete []Ic;
-    delete []Ig;
+    delete []I1;
+    delete []I2;
   }
 
   return EXIT_SUCCESS;
 }
+

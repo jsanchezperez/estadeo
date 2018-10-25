@@ -1,5 +1,5 @@
 CFLAGS=-Wall -Wextra -O3 #-Werror   
-LFLAGS=-lstdc++ -fopenmp -lm -lfftw3 -lfftw3f #-lpng -ljpeg -ltiff 
+LFLAGS=-lstdc++ -lm -lfftw3 -lfftw3f -fopenmp  #-lpng -ljpeg -ltiff 
 INCLUDE=-I./src/ica -I./src
 
 #object files
@@ -10,7 +10,7 @@ OBJ_ESTADEO= color_bicubic_interpolation.o estadeo.o gaussian_conv_dct.o main.o 
 OBJ= $(OBJ_ICA) $(OBJ_ESTADEO)
 
 #executable files
-all: bin obj bin/estadeo bin/generate_graphics
+all: bin obj bin/estadeo
 
 bin:
 	mkdir -p bin

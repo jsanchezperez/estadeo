@@ -59,52 +59,18 @@ size_t write_video(
   *  Function to save transformations to a file
   * 
 **/
-void save_transforms(
-  char *name,      //file name
-  float *H,        //set of transformations
-  int nparams,     //number of parameters of the transformations
-  int ntransforms, //number of transformations
-  int nx,          //image width
-  int ny           //image height
+void save_transform(
+  char  *name,   //file name
+  float *H,      //transformation
+  int   nparams  //number of parameters of the transformations
 )
 {
-  FILE *fd=fopen(name,"w");
+  FILE *fd=fopen(name,"a");
   if(fd!=NULL)
   {
-    fprintf(fd,"%d %d %d %d\n", nparams, ntransforms, nx, ny);
-
-    for(int i=0;i<ntransforms;i++)
-    {
-      for(int j=0;j<nparams;j++) fprintf(fd, "%.15lf ", H[i*nparams+j]);
-      fprintf(fd, "\n");
-    }
+    for(int j=0;j<nparams;j++) fprintf(fd, "%.10f ", H[j]);
+    fprintf(fd, "\n");
     fclose(fd);
   }
 }
 
-
-/**
-  *
-  *  Function to read transformations from a file
-  * 
-**/
-void read_transforms(
-  char *name,      //file name
-  float *H,        //set of transformations
-  int nparams,     //number of parameters of the transformations
-  int ntransforms, //number of transformations
-  int &nx,         //image width
-  int &ny          //image height
-)
-{
-  FILE *fd=fopen(name,"r");
-  if(fd!=NULL)
-  {
-    int r=fscanf(fd,"%d %d %d %d", &nparams, &ntransforms, &nx, &ny);
-    if(r>0)
-      for(int i=0;i<ntransforms;i++) {
-	for(int j=0;j<nparams;j++) r=fscanf(fd, "%f", &(H[i*nparams+j]));
-      }
-    fclose(fd);
-  }
-}
