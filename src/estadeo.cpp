@@ -103,11 +103,11 @@ void estadeo::compute_motion
 )
 {
   //parameters for the direct method
-  int   nscales=10;
+  int   nscales=100;
   float TOL=1E-3;
   float lambda=0;
   float N;
-  int   robust=QUADRATIC; //LORENTZIAN; //
+  int   robust=LORENTZIAN; //QUADRATIC; //
   int   max_d=200;
   int   min_d=50;
 
@@ -162,8 +162,8 @@ void estadeo::frame_warping
   float *I2=new float[nx*ny*nz];
 
   //warp the image
-  //bicubic_interpolation(I, I2, Hp, Np, nx, ny, nz);
-  bilinear_interpolation(I, I2, Hp, Np, nx, ny, nz);
+  bicubic_interpolation(I, I2, Hp, Np, nx, ny, nz);
+  //bilinear_interpolation(I, I2, Hp, Np, nx, ny, nz);
 
   //copy warped image
   for(int j=0; j<size; j++)
@@ -209,7 +209,6 @@ float *estadeo::get_smooth_H()
 //Gaussian convolution
 void estadeo::global_gaussian(int i)
 {
-
   //obtain current radius
   int rad=radius; 
   if(rad>=Nf) rad=Nf-1;
@@ -229,13 +228,13 @@ void estadeo::global_gaussian(int i)
       double value=0;
       
       //Neumann boundary conditions
-      if(j<0 && Nf<n)
-        value=Hc[-j*Np+p];      
+      if(j<0)
+        value=Hc[-j*Np+p];
       else if(j>=Nf){
         int l=(2*Nf-1-j)%n;
         value=Hc[l*Np+p];
       }
-      else 
+      else
         value=Hc[(j%n)*Np+p];
       
       //increase accumulator
