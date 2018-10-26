@@ -1,7 +1,6 @@
 #ifndef ESTADEO_H
 #define ESTADEO_H
 
-
 #define LOCAL_MATRIX_BASED_SMOOTHING 0
 #define LOCAL_LINEAR_MATRIX_BASED_SMOOTHING 1
 #define LOCAL_LINEAR_POINT_BASED_SMOOTHING 2
@@ -15,7 +14,6 @@
  *
  * Class for online video stabilization
  * Implements a circular array
- * Minimum number of operations
  *
 **/
 class estadeo {
@@ -71,11 +69,14 @@ class estadeo {
     void global_gaussian(int i);
     
     void local_matrix_based_smoothing();
+    
 
   private:
+  
+    int   type;    //motion smoothing method
+    int   Np;      //number of parameters in the transformation
     float sigma;   //Gaussian standard deviation 
     int   radius;  //radius of the Gaussian convolution
-    int   type;    //motion smoothing method
     float *Hs;     //last smoothing transform
     float *Hp;     //last stabilizing transform
     int   verbose; //swith on verbose mode
@@ -83,7 +84,6 @@ class estadeo {
     //variables for the circular array
     int   N;    //circular array size
     int   Nf;   //number of frames
-    int   Np;   //number of parameters in the transformation
     int   fc;   //current frame position
     float *H;   //original matrix transformation
     float *Hc;  //composition of transformations

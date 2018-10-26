@@ -20,7 +20,7 @@
 
 
 estadeo::estadeo(int strategy, int np, float sigm, int verb): 
-         type(strategy), sigma(sigm), Np(np), verbose(verb)
+         type(strategy), Np(np), sigma(sigm), verbose(verb)
 {
   radius=obtain_radius();
   N=(2*radius+1);

@@ -1,11 +1,11 @@
 CFLAGS=-Wall -Wextra -O3 #-Werror   
-LFLAGS=-lstdc++ -lm -lfftw3 -lfftw3f -fopenmp  #-lpng -ljpeg -ltiff 
+LFLAGS=-lstdc++ -lm -lfftw3 -lfftw3f -fopenmp
 INCLUDE=-I./src/ica -I./src
 
 #object files
 OBJ_ICA= bicubic_interpolation.o file.o inverse_compositional_algorithm.o mask.o matrix.o transformation.o zoom.o
 
-OBJ_ESTADEO= color_bicubic_interpolation.o estadeo.o gaussian_conv_dct.o main.o motion_smoothing.o utils.o
+OBJ_ESTADEO= color_bicubic_interpolation.o estadeo.o gaussian_conv_dct.o main.o utils.o
 
 OBJ= $(OBJ_ICA) $(OBJ_ESTADEO)
 
@@ -21,10 +21,6 @@ obj:
 #generate executables
 bin/estadeo: $(addprefix obj/,$(OBJ)) 
 	g++ $^ -o $@ $(CFLAGS) $(LFLAGS)
-
-bin/generate_graphics: obj/generate_graphics.o obj/gaussian_conv_dct.o  
-	g++ $^ -o $@ $(CFLAGS) $(LFLAGS) 
-
 
 #compile ica
 obj/%.o: src/ica/%.cpp
