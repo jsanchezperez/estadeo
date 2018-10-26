@@ -27,9 +27,9 @@ echo
 
 echo Estadeo stabilization for video $input_raw_video to $output_raw_video
 path=$(dirname "$0")
-#valgrind --show-leak-kinds=all --leak-check=full $path/estadeo $input_raw_video $width $height $nframes -o $output_raw_video $params
+valgrind --show-leak-kinds=all --leak-check=full --track-origins=yes $path/estadeo $input_raw_video $width $height $nframes -o $output_raw_video $params
 
-$path/estadeo $input_raw_video $width $height $nframes -o $output_raw_video $params
+#$path/estadeo $input_raw_video $width $height $nframes -o $output_raw_video $params
 echo
 
 echo Converting $output_raw_video to $outvideo

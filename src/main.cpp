@@ -13,7 +13,6 @@
 #include <algorithm> 
 
 #include "estadeo.h"
-#include "motion_smoothing.h"
 #include "utils.h"
 #include "transformation.h"
 

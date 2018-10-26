@@ -72,7 +72,7 @@ void estadeo::process_frame(
   
   //increase the position of the current frame in the circular array
   fc++;
-  if(fc>N) fc=0;
+  if(fc>N-1) fc=0;
   
   //step 1. Compute motion between the last two frames
   if(verbose) timer.set_t1();
@@ -107,7 +107,7 @@ void estadeo::compute_motion
   float TOL=1E-3;
   float lambda=0;
   float N;
-  int   robust=LORENTZIAN; //QUADRATIC; //
+  int   robust=QUADRATIC; //LORENTZIAN; //
   int   max_d=200;
   int   min_d=50;
 
@@ -162,7 +162,7 @@ void estadeo::frame_warping
   float *I2=new float[nx*ny*nz];
 
   //warp the image
-  //bicubic_interpolation
+  //bicubic_interpolation(I, I2, Hp, Np, nx, ny, nz);
   bilinear_interpolation(I, I2, Hp, Np, nx, ny, nz);
 
   //copy warped image
@@ -250,6 +250,7 @@ void estadeo::global_gaussian(int i)
 
 
 //local matrix based smoothing approach
+//SE PUEDEN CALCULAR DE FORMA INCREMENTAL Hc (con una sola H_1)
 void estadeo::local_matrix_based_smoothing()
 {
   //obtain current radius
@@ -260,18 +261,18 @@ void estadeo::local_matrix_based_smoothing()
   int n=N;   
   if(n>Nf) n=Nf;
 
-  //compute inverse transformation 
-  //for(int i=0;i<n;i++) 
+  //compute inverse transform
   inverse_transform(&(H[fc*Np]), &(H_1[fc*Np]), Np);
 
   //recompute the stabilization for past frames using the circular array
-  for(int i=Nf-rad/*-1*/;i<Nf;i++)
+  for(int i=Nf-rad; i<Nf; i++)
   {
     int t1=(i-rad>0)?i-rad: 0;
 
     //compute backward transformations
     int f=i%n;     //current frame in circular array
     int l=(i-1)%n; //previous frame in circular array
+    
     for(int j=0;j<Np;j++) 
       Hc[l*Np+j]=H_1[f*Np+j];
     for(int j=i-2;j>=t1;j--)
@@ -280,7 +281,7 @@ void estadeo::local_matrix_based_smoothing()
       int l2=j%n;
       compose_transform(&(H_1[l1*Np]), &(Hc[l1*Np]), &(Hc[l2*Np]), Np);
     }
-    
+
     //introduce the identity matrix in the current frame
     for(int j=0;j<Np;j++) Hc[f*Np+j]=0;
 
