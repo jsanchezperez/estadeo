@@ -1,5 +1,4 @@
 Estadeo Video Stabilization
-***************************
 
 *******
 SUMMARY
